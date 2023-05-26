@@ -1,755 +1,774 @@
-# Лекция 4 | Двухуровневая организация памяти
+# Лекция 5 | Дек
 
 #### 1. Ответьте на следущие вопросы:
 
-<table>
-<tr>
-</tr>
-<td>
-Становятся ли указатели, ссылки итераторы на элементы недопустимыми при увеличении или уменьшении размера рассмотренного вида динамических массивов? 
-</td>
-<td>
-Элементы никогда не изменяют свое местоположение в памяти, потому что фрагменты памяти, выделенные для элементов массива, не могут переполниться. Переполниться может только вектор указателей на эти элементы, тем самым изменить только свое местоположение. Поэтому и указатели, и ссылки на элементы не становятся недопустимыми. А итераторы могут стать недопустимыми, поскольку итератор должен содержать местоположение в слое указателей.
-</td>
-<tr>
-<td>
-Почему в реализации данного вида динамических массивов всегда требуется иметь как минимум один резервний элемент?
-</td>
-<td>
-Это нужно для итераторов. Итераторы в реализации данного вида динамических массивов представлены как два указателя: один на верхний слой, другой – нижний. Из-за этого и требуется иметь как минимум один резервный элемент, на который указывает итератор end, потому что если будет занят весь верхний слой, мы не сможем установить итератор на нижний слой, потому что его просто не будет
-</td> 
-</tr>
-</table>
++ По функциональности дек в С++ очень похож на вектор, однако их реализации заметно различаются. Объясните почему
+1. Структура данных:
+    Вектор (std::vector) - это динамический массив, который хранит элементы в непрерывном блоке памяти. Это позволяет обеспечить быстрый доступ к элементам по индексу, константное время для доступа к произвольному элементу и эффективную работу с памятью при увеличении размера контейнера.
+
+    Дек (std::deque) - это контейнер, реализующий двустороннюю очередь. В отличие от вектора, дек состоит из нескольких блоков памяти, называемых чанками, которые связаны между собой. Это позволяет эффективно добавлять и удалять элементы как в начале, так и в конце контейнера.
+
+2. Доступ и операции:
+    Вектор обеспечивает эффективный произвольный доступ к элементам, а также быструю вставку/удаление элементов в конец контейнера. Однако, вставка/удаление элементов в середине или в начале вектора требует переноса большого количества элементов, что может быть затратным по времени.
+
+    Дек обеспечивает эффективный доступ к обоим концам контейнера, что позволяет быстро добавлять и удалять элементы как в начале, так и в конце. Вставка/удаление элементов в середине дека также выполняется эффективно. Это делает дек удобным выбором, когда требуется частая вставка/удаление элементов в начале или конце контейнера.
+
+3. Память и ресурсы:
+    Вектор использует меньше памяти, чем дек, так как элементы хранятся в непрерывном блоке памяти.
+    Дек требует дополнительных затрат на управление блоками памяти и связывание чанков, что может привести к небольшим накладным расходам по памяти и производительности.
+
+Выбор между вектором и деком зависит от конкретных требований и особенностей задачи. Если вставка/удаление элементов происходит главным образом в начале или конце контейнера, или требуется эффективный произвольный доступ к элементам, то дек может быть предпочтительнее. В случае, когда важна эффективность памяти и производительность при операциях с произвольными элементами, вектор может быть лучшим выбором.
 
 
++ Стандарс С++ явно не требует выбрать ту или иную реализацию дека, однако, дает недвусмысленный намек, какая из реализаций предполагается. Стандарт требует, чтобы ссылки и указатели на элемент не становились недопустимыми в ходе работы. Как это требование влияет на выбор способа реализации дека? Обоснуйте ответ
 
+Требование стандарта C++ о сохранении допустимости ссылок и указателей на элементы дека влияет на выбор способа реализации дека.
 
----
+Поскольку дек позволяет эффективно вставлять и удалять элементы как в начале, так и в конце контейнера, одним из возможных способов его реализации является использование двусвязного списка. При использовании двусвязного списка в качестве основной структуры данных для дека, ссылки и указатели на элементы остаются допустимыми в ходе работы с контейнером.
 
-#### 2. Реализовать vector с двухуровневой схемой выделения памяти. Имеется шаблон, и нужно дополнить его, заменив многоточие на соответсвующие команды. Интерфейс класса должен соответсвовать интерфейсу стандартного класса vector. Требуется реализовать конструктор по умолчанию, конструктор с параметрами, деструктор, метод size(), оператор [] и метод log. При реализации нужно использовать представленный шаблон
-```cpp
-#include <iostream>
-#include <vector>
-using std::vector;
+При вставке или удалении элементов в середине дека, двусвязный список позволяет эффективно изменять связи между элементами без необходимости перемещения остальных элементов. Таким образом, дек, реализованный с использованием двусвязного списка, соответствует требованию стандарта C++ о сохранении допустимости ссылок и указателей на элементы.
 
-template <typename T>
-class vector2d {
-private:
-    // Определение размера чанка в зависимости от размера типа T
-    static const int chunk_size = (512ULL > sizeof(T) ? 512ULL : sizeof(T)) / sizeof(T);
-    int n;                      // Общее количество элементов
-    vector<T*> chunks;          // Вектор указателей на чанки
+С другой стороны, если бы для реализации дека использовался векторка или, то встав удаление элементов в середине контейнера может привести к перераспределению всего массива и, как следствие, недопустимости ссылок и указелей наат элементы, которые были получены до перераспределения.
 
-public:
-    vector2d() : n(0) {
-        chunks.push_back(new T[chunk_size]);  // Создаем первый чанк вектора
-    }
-
-    vector2d(int _n, T val = T()) : n(_n) {
-        int chunk_count = 1 + n / chunk_size;  // Вычисляем общее количество чанков
-        int last_chunk_size = n % chunk_size;  // Вычисляем размер последнего чанка
-        for (int i = 0; i < chunk_count - 1; i++) {
-            chunks.push_back(new T[chunk_size]);              // Создаем новый чанк
-            std::fill(chunks[i], chunks[i] + chunk_size, val); // Заполняем чанк значением по умолчанию
-        }
-        if (last_chunk_size > 0) {
-            chunks.push_back(new T[last_chunk_size]);                     // Создаем последний чанк
-            std::fill(chunks[chunk_count - 1], chunks[chunk_count - 1] + last_chunk_size, val);  // Заполняем последний чанк значением по умолчанию
-        }
-    }
-
-    ~vector2d() {
-        // Освобождаем память, занятую чанками
-        for (auto& chunk : chunks) {
-            delete[] chunk;
-        }
-    }
-
-    T& operator[](int i) {
-        int chunk_index = i / chunk_size;    // Вычисляем индекс чанка
-        int element_index = i % chunk_size;  // Вычисляем индекс элемента внутри чанка
-        return chunks[chunk_index][element_index];  // Возвращаем элемент по указанным индексам
-    }
-
-    int size() {
-        return n;  // Возвращаем общее количество элементов
-    }
-
-    void log() {
-        std::cout << "size=" << n << std::endl;                  // Выводим общее количество элементов
-        std::cout << "chunks=" << chunks.size() << std::endl;   // Выводим количество чанков
-        for (auto p : chunks)
-            std::cout << p << ' ';  // Выводим адреса чанков
-        std::cout << std::endl;
-    }
-};
-
-using namespace std;
-int main() {
-    vector2d<double> v(100, 0.5);          // Создаем объект vector2d с 100 элементами типа double, инициализируя все значения 0.5
-    for (int i = 0; i < 50; i++)
-        v[i] = i / 100.0;                  // Присваиваем значения элементам вектора
-    v.log();                               // Выводим информацию о векторе
-    for (int i = 0; i < v.size(); i++)
-        cout << v[i] << ' ';               // Выводим элементы вектора
-    cout << endl;
-    vector2d<double> w;                    // Создаем пустой объект vector2d
-    w.log();                               // Выводим информацию о векторе
-    vector2d<int> u(128, -1);              // Создаем объект vector2d с 128 элементами типа int, инициализируя все значения -1
-    u.log();                               // Выводим информацию о векторе
-    return 0;
-}
-
-```
-В этом примере реализован класс ```vector2d```, который представляет собой двумерный вектор с двухуровневой схемой выделения памяти. Класс имеет ```конструкторы``` по умолчанию и с параметрами, ```деструктор```, метод ```size()```, ```оператор []``` для доступа к элементам и метод ```log()```, который выводит информацию о размере и чанках вектора. Пример использования класса ```vector2d``` также представлен в функции ```main()```.
-
-
-```txt
-size=100
-chunks=2
-000001C650C51340 000001C650C65060
-0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5
-size=0
-chunks=1
-000001C650C54490
-size=128
-chunks=1
-000001C650C666C0
-```
+**Таким образом, использование двусвязного списка или подобной структуры данных позволяет удовлетворить требованию стандарта C++ о сохранении допустимости ссылок и указателей на элементы дека в ходе его работы.**
 
 ---
 
-#### 3. Нужно реализовать методы resize, push_back(x), pop_back() для этого шаблона
+#### 2. Напишите программу с использованием дека на C++ и на Python. Последовательность чисел строится по следующему правилу. Изначельно в последовательности дву единицы. Далее, если сумма крайних элементов последовательности делина на 2 или на 3, то сумма добавляется в последовательность справа, иначе слеува. Требуется вывести последовательность из n элементов, где число n подается на вход программы. 
 
-Шаблон
+<table><tr><td>
+
+
 ```cpp
 #include <iostream>
-#include <vector>
-using std::vector;
-
-template <typename T>
-class vector2d {
-private:
-    // Определение размера чанка в зависимости от размера типа T
-    static const int chunk_size = (512ULL > sizeof(T) ? 512ULL : sizeof(T)) / sizeof(T);
-    int n;                      // Общее количество элементов
-    vector<T*> chunks;          // Вектор указателей на чанки
-
-public:
-    vector2d() : n(0) {
-        chunks.push_back(new T[chunk_size]);  // Создаем первый чанк вектора
-    }
-
-    vector2d(int _n, T val = T()) : n(_n) {
-        int chunk_count = 1 + n / chunk_size;  // Вычисляем общее количество чанков
-        int last_chunk_size = n % chunk_size;  // Вычисляем размер последнего чанка
-        for (int i = 0; i < chunk_count - 1; i++) {
-            chunks.push_back(new T[chunk_size]);              // Создаем новый чанк
-            std::fill(chunks[i], chunks[i] + chunk_size, val); // Заполняем чанк значением по умолчанию
-        }
-        if (last_chunk_size > 0) {
-            chunks.push_back(new T[last_chunk_size]);                     // Создаем последний чанк
-            std::fill(chunks[chunk_count - 1], chunks[chunk_count - 1] + last_chunk_size, val);  // Заполняем последний чанк значением по умолчанию
-        }
-    }
-
-    ~vector2d() {
-        // Освобождаем память, занятую чанками
-        for (auto& chunk : chunks) {
-            delete[] chunk;
-        }
-    }
-
-    T& operator[](int i) {
-        int chunk_index = i / chunk_size;    // Вычисляем индекс чанка
-        int element_index = i % chunk_size;  // Вычисляем индекс элемента внутри чанка
-        return chunks[chunk_index][element_index];  // Возвращаем элемент по указанным индексам
-    }
-
-    int size() {
-        return n;  // Возвращаем общее количество элементов
-    }
-
-    void resize(int newsize, const T& val = T()) {
-        int new_chunk_count = 1 + newsize / chunk_size;
-        int last_chunk_size = newsize % chunk_size;
-
-        // Удаляем лишние чанки
-        while (chunks.size() > new_chunk_count) {
-            delete[] chunks.back();
-            chunks.pop_back();
-        }
-
-        // Создаем новые чанки при необходимости
-        while (chunks.size() < new_chunk_count) {
-            if (chunks.size() == new_chunk_count - 1 && last_chunk_size > 0) {
-                // Создаем последний чанк с размером, соответствующим новому размеру
-                chunks.push_back(new T[last_chunk_size]);
-                std::fill(chunks.back(), chunks.back() + last_chunk_size, val);
-            }
-            else {
-                // Создаем чанк с размером chunk_size
-                chunks.push_back(new T[chunk_size]);
-                std::fill(chunks.back(), chunks.back() + chunk_size, val);
-            }
-        }
-
-        n = newsize;  // Обновляем размер вектора
-    }
-
-    void push_back(const T& val) {
-        int last_chunk_size = n % chunk_size;
-
-        if (last_chunk_size == 0) {
-            // Создаем новый чанк, так как последний чанк полностью заполнен
-            chunks.push_back(new T[chunk_size]);
-        }
-
-        // Добавляем элемент в последний чанк
-        chunks.back()[last_chunk_size] = val;
-        n++;  // Увеличиваем размер вектора
-    }
-
-    void pop_back() {
-        if (n > 0) {
-            int last_chunk_size = n % chunk_size;
-
-            // Удаляем последний элемент вектора
-            if (last_chunk_size == 1) {
-                // Удаляем последний чанк, так как он останется пустым после удаления элемента
-                delete[] chunks.back();
-                chunks.pop_back();
-            }
-
-            n--;  // Уменьшаем размер вектора
-        }
-    }
-
-    void log() {
-        std::cout << "size=" << n << std::endl;                  // Выводим общее количество элементов
-        std::cout << "chunks=" << chunks.size() << std::endl;   // Выводим количество чанков
-        for (auto p : chunks)
-            std::cout << p << ' ';  // Выводим адреса чанков
-        std::cout << std::endl;
-    }
-};
-
+#include <deque> // Включаем заголовочный файл для использования дека
 using namespace std;
-int main() {
-    vector2d<double> v(100, 0.5);
-    v.log();
-    v.resize(50);
-    v.log();
-    v.resize(128, 0.1);
-    v.log();
-    for (int i = 0; i < v.size(); i++)
-        cout << v[i] << ' ';
-}
 
-```
-Теперь у класса vector2d есть методы ```resize```, ```push_back``` и ```pop_back```, которые позволяют изменять размер вектора и добавлять/удалять элементы.
+deque<int> generateSequence(int n) {
+    deque<int> sequence; // Создаем пустой дек для хранения последовательности
+    sequence.push_back(1); // Добавляем первую единицу в дек
+    sequence.push_back(1); // Добавляем вторую единицу в дек
 
-```txt
-size=100
-chunks=2
-00000219F446E8D0 00000219F446B8F0
-size=50
-chunks=1
-00000219F446E8D0
-size=128
-chunks=3
-00000219F446E8D0 00000219F446E620 00000219F446F330
-0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1
-```
-
-
-
-#### 4. Нужно дописать класс итератора на элементы разработанного класса. Реализуй методы сооьветствующие интерфейсу двунаправленного итератора. Добавить в класс методы begin() и end(), возвращающие итераторы на начало и конец последовательности элементов. При реализации использовать представленный шаблон
-
-```cpp
-#include <iostream>
-#include <vector>
-using std::vector;
-
-// Класс итератора для двумерного вектора
-template <typename T>
-class vector2diter {
-private:
-    // Константа, определяющая размер блока данных
-    static const int chunk_size = (512ULL > sizeof(T) ? 512ULL : sizeof(T)) / sizeof(T);
-    // Итератор блока данных
-    typename vector<T*>::iterator chunk_iter;
-    // Итератор элемента в блоке данных
-    T* elem_iter;
-
-public:
-    // Категория итератора
-    using iterator_category = std::bidirectional_iterator_tag;
-    // Тип значения, на которое указывает итератор
-    using value_type = T;
-    // Тип разности между итераторами
-    using difference_type = std::ptrdiff_t;
-    // Тип указателя на значение
-    using pointer = T*;
-    // Тип ссылки на значение
-    using reference = T&;
-
-    // Конструктор итератора
-    vector2diter(typename vector<T*>::iterator c_it, T* e_it) : chunk_iter(c_it), elem_iter(e_it) {}
-
-    // Перегруженный оператор инкремента (префиксный)
-    vector2diter& operator++() {
-        ++elem_iter;
-        // Переход к следующему блоку данных, если достигнут конец текущего блока
-        if (elem_iter == *chunk_iter + chunk_size) {
-            ++chunk_iter;
-            elem_iter = *chunk_iter;
-        }
-        return *this;
-    }
-
-    // Перегруженный оператор декремента (префиксный)
-    vector2diter& operator--() {
-        --elem_iter;
-        // Переход к предыдущему блоку данных, если достигнуто начало текущего блока
-        if (elem_iter < *chunk_iter) {
-            --chunk_iter;
-            elem_iter = *chunk_iter + chunk_size - 1;
-        }
-        return *this;
-    }
-
-    // Перегруженный оператор разыменования
-    T& operator*() {
-        return *elem_iter;
-    }
-
-    // Перегруженный оператор равенства
-    friend bool operator==(const vector2diter<T>& a, const vector2diter<T>& b) {
-        return a.chunk_iter == b.chunk_iter && a.elem_iter == b.elem_iter;
-    }
-
-    // Перегруженный оператор неравенства
-    friend bool operator!=(const vector2diter<T>& a, const vector2diter<T>& b) {
-        return !(a == b);
-    }
-};
-
-// Класс двумерного вектора
-template <typename T>
-class vector2d {
-private:
-    // Константа, определяющая размер блока данных
-    static const int chunk_size = (512ULL > sizeof(T) ? 512ULL : sizeof(T)) / sizeof(T);
-    // Количество элементов в векторе
-    int n;
-    // Вектор указателей на блоки данных
-    vector<T*> chunks;
-
-public:
-    // Конструктор по умолчанию
-    vector2d() : n(0) {
-        chunks.push_back(new T[chunk_size]);
-    }
-
-    // Конструктор с заданным размером и начальным значением
-    vector2d(int _n, const T& val = T()) : n(_n) {
-        // Вычисление количества блоков данных и размера последнего блока
-        int chunk_count = 1 + n / chunk_size;
-        int last_chunk_size = n % chunk_size;
-        // Создание блоков данных и заполнение их начальным значением
-        for (int i = 0; i < chunk_count - 1; i++) {
-            chunks.push_back(new T[chunk_size]);
-            std::fill(chunks[i], chunks[i] + chunk_size, val);
-        }
-        if (last_chunk_size > 0) {
-            chunks.push_back(new T[last_chunk_size]);
-            std::fill(chunks[chunk_count - 1], chunks[chunk_count - 1] + last_chunk_size, val);
-        }
-    }
-
-    // Перегруженный оператор индексации
-    T& operator[](int i) {
-        // Вычисление индекса блока и индекса элемента в блоке
-        int chunk_index = i / chunk_size;
-        int element_index = i % chunk_size;
-        return chunks[chunk_index][element_index];
-    }
-
-    // Возвращает количество элементов в векторе
-    int size() {
-        return n;
-    }
-
-    // Изменяет размер вектора
-    void resize(int newsize, const T& val = T()) {
-        // Вычисление количества новых блоков данных
-        int new_chunk_count = 1 + newsize / chunk_size;
-        // Добавление или удаление блоков данных в зависимости от нового размера
-        if (new_chunk_count > chunks.size()) {
-            for (int i = chunks.size(); i < new_chunk_count; i++) {
-                if (i == new_chunk_count - 1) {
-                    // Создание последнего блока данных с размером, не превышающим chunk_size
-                    chunks.push_back(new T[newsize % chunk_size]);
-                    std::fill(chunks[i], chunks[i] + newsize % chunk_size, val);
-                } else {
-                    // Создание блока данных с размером chunk_size
-                    chunks.push_back(new T[chunk_size]);
-                    std::fill(chunks[i], chunks[i] + chunk_size, val);
-                }
-            }
-        } else if (new_chunk_count < chunks.size()) {
-            // Удаление блоков данных, превышающих новое количество блоков
-            for (int i = new_chunk_count; i < chunks.size(); i++) {
-                delete[] chunks[i];
-            }
-            chunks.resize(new_chunk_count);
-        }
-        n = newsize;
-    }
-
-    // Добавляет элемент в конец вектора
-    void push_back(const T& val) {
-        if (n % chunk_size == 0) {
-            // Создание нового блока данных, если текущий блок заполнен
-            chunks.push_back(new T[chunk_size]);
-        }
-        // Добавление элемента в текущий блок данных
-        chunks.back()[n % chunk_size] = val;
-        n++;
-    }
-
-    // Удаляет последний элемент из вектора
-    void pop_back() {
-        if (n > 0) {
-            n--;
-            // Удаление последнего блока данных, если он стал ненужным
-            if (n % chunk_size == 0 && chunks.size() > 1) {
-                delete[] chunks.back();
-                chunks.pop_back();
-            }
-        }
-    }
-
-    // Возвращает итератор, указывающий на начало вектора
-    vector2diter<T> begin() {
-        return vector2diter<T>(chunks.begin(), chunks[0]);
-    }
-
-    // Возвращает итератор, указывающий на конец вектора
-    vector2diter<T> end() {
-        if (chunks.empty()) {
-            return vector2diter<T>(chunks.begin(), nullptr);
+    while (sequence.size() < n) { // Пока размер последовательности меньше заданного числа n
+        int sum = sequence.front() + sequence.back(); // Вычисляем сумму крайних элементов
+        if (sum % 2 == 0 || sum % 3 == 0) { // Если сумма делится на 2 или на 3
+            sequence.push_back(sum); // Добавляем сумму в конец последовательности
         } else {
-            return vector2diter<T>(chunks.end() - 1, chunks.back() + n % chunk_size);
+            sequence.push_front(sum); // Добавляем сумму в начало последовательности
         }
     }
 
-    // Выводит информацию о размере вектора и количестве блоков данных
-    void log() {
-        std::cout << "size=" << n << std::endl;
-        std::cout << "chunks=" << chunks.size() << std::endl;
-        for (auto p : chunks)
-            std::cout << p << ' ';
-        std::cout << std::endl;
-    }
-};
+    return sequence;
+}
 
 int main() {
-    // Создание и использование двумерного вектора
-    vector2d<double> v(100, 0.5);
-    v.log();
-    v.resize(50);
-    v.log();
-    v.resize(128, 0.1);
-    v.log();
-    for (auto& x : v)
-        std::cout << x << ' ';
-    std::cout << std::endl;
+    int n;
+    cout << "Enter the number of elements: ";
+    cin >> n;
+
+    deque<int> sequence = generateSequence(n); // Генерируем последовательность
+
+    cout << "Sequence of " << n << " elements: ";
+    for (int num : sequence) {
+        cout << num << " ";
+    }
+    cout << endl;
 
     return 0;
 }
-
 ```
-В данном коде реализованы методы класса ```vector2diter``` в соответствии с требованиями двунаправленного итератора. Класс ```vector2d``` имеет методы ```begin()``` и ```end()```, возвращающие итераторы на начало и конец последовательности элементов.
+
+
+</td><td>
+
+
+```python
+from collections import deque
+
+def generate_sequence(n):
+    sequence = deque([1, 1]) # Создаем дек с начальными двумя единицами
+
+    while len(sequence) < n: # Пока размер последовательности меньше заданного числа n
+        sum = sequence[0] + sequence[-1] # Вычисляем сумму крайних элементов
+        if sum % 2 == 0 or sum % 3 == 0: # Если сумма делится на 2 или на 3
+            sequence.append(sum) # Добавляем сумму в конец последовательности
+        else:
+            sequence.appendleft(sum) # Добавляем сумму в начало последовательности
+
+    return sequence
+
+n = int(input("Enter the number of elements: "))
+sequence = generate_sequence(n) # Генерируем последовательность
+
+print(f"Sequence of {n} elements:", end=" ")
+for num in sequence:
+    print(num, end=" ")
+print()
+```
+
+
+</td></tr></table>
+
+Оба варианта программы генерируют последовательность чисел, используя дек для хранения элементов и применяя заданное правило. Разница между программами заключается в синтаксисе и использовании соответствующих функций и методов для работы с деком в каждом языке.
+
+---
+
+#### 3. Необходимо реализовать кольцевой дек в шаблонном классе cdeque. Класс должен содрежать конструктор с одним параметром, задающим размер зарезервивованной памяти, деструктор, методы size(), push_back(x), push_front(x), pop_back(), pop_front(), back(), front() и оператор []. Заменить многотичия на необходимы команды
+
+```cpp
+#include <iostream>
+#include <algorithm>
+#include <exception>
+
+template <typename T>
+class cdeque {
+private:
+    int _reserved;   //объем зарезервированной памяти
+    int _size;       //количество элементов в деке
+    int _offset;     //смещение (до первого элемента)
+    T* _data;        //указатель на массив
+    void reallocate(int __reserve);
+public:
+   cdeque(int _reserve) {		//инициализирующий конструктор
+      if (_reserve<1)			//пустой элемент, чтобы итераторы на начало и конец не совпали
+         throw std::length_error("reserve must be >0");
+      _reserved=_reserve;
+      _size=0;
+      _offset=0;
+      _data=new T [_reserved];
+   }
+
+
+   ~cdeque() {
+      delete[] _data; 
+   }
+
+
+   int size() {
+      return _size;
+   }
+
+
+   T& operator[](int i) {
+      return _data[(_offset + i)%_reserved];
+   }
+
+
+   T& front() {
+      return _data[_offset];		//_offset указывает на первый элемент
+   }
+
+
+   T& back() {
+      if ((_reserved - _offset) < _size) 		//если конец кольца находится слева от его начала
+            return _data[_size - (_reserved - _offset) - 1];
+        else 						//если элементы помещаются без цикла по кольцу
+            return _data[_offset + _size - 1];
+   }
+
+
+   void push_back(const T &x) {
+      if (_size+1==_reserved)
+         reallocate(2*_reserved);			//чтобы end() не совпал с begin()
+      _size++;
+
+      if (_reserved - _offset < _size)			//если конец кольца находится слева от его начала
+          _data[(_size - (_reserved - _offset)) - 1] = x;
+      else						//если элементы помещаются без цикла по кольцу
+          _data[(_offset + _size) - 1] = x;
+   }
+
+
+   void push_front(const T &x) {
+      if (_size+1==_reserved)
+         reallocate(2*_reserved);		//чтобы end() не совпал с begin()
+      _size++;
+      if (_offset == 0) { 			//если первая позиция и есть начало
+            _data[_reserved - 1] = x; 		//записываем в конец
+            _offset = _reserved - 1; 		//обновляем смещение до первого элемента
+      } else {
+            _data[_offset - 1] = x; 		//просто пушим в начало
+            _offset--; 				//обновляем смещение до первого элемента
+      }
+      
+   }
+
+
+   void pop_back() {
+      if ((_reserved - _offset) < _size) 			//если конец левее начала
+            _data[_size - (_reserved - _offset) - 1] = T(); 	//удаляем элемент с конца
+        else
+            _data[_offset + _size - 1] = T();
+        _size--;
+   }
+
+
+   void pop_front() {
+      _data[_offset] = T(); 		//_offset указывает на первый элемент, поэтому его легко удалить
+        if (_offset == _reserved-1) 	//если он был в конце
+            _offset = 0; 		//теперь начало совпадает с фактическим концом
+        else
+            _offset++; 			//теперь первый элемент следующий по списку
+        _size--;
+   }
+};
+template <typename T>
+void cdeque<T>::reallocate(int __reserve) {
+}
+
+int main() {
+  cdeque<int> d(10);
+  for (int j=1;j<10;j++) {
+     d.push_back(j);
+     for (int i=0;i<d.size();i++)
+        std::cout<<d[i]<<' ';
+     std::cout<<std::endl;
+  }
+  for (int j=0;j<10;j++) {
+     for (int i=0;i<d.size();i++)
+        std::cout<<d[i]<<' ';
+     std::cout<<std::endl;
+     int x=d.front();
+     d.pop_front();
+     d.push_back(x);
+  } 
+  for (int j=0;j<11;j++) {
+     for (int i=0;i<d.size();i++)
+        std::cout<<d[i]<<' ';
+     std::cout<<std::endl;
+     int x=d.back();
+     d.pop_back();
+     d.push_front(x);
+  } 
+  return 0;
+}
+```
 ```txt
-size=100
-chunks=2
-000001EDD953E940 000001EDD953B970
-size=50
-chunks=1
-000001EDD953E940
-size=128
-chunks=3
-000001EDD953E940 000001EDD953E690 000001EDD9536F20
-0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1
+1
+1 2
+1 2 3
+1 2 3 4
+1 2 3 4 5
+1 2 3 4 5 6
+1 2 3 4 5 6 7
+1 2 3 4 5 6 7 8
+1 2 3 4 5 6 7 8 9
+1 2 3 4 5 6 7 8 9
+2 3 4 5 6 7 8 9 1
+3 4 5 6 7 8 9 1 2
+4 5 6 7 8 9 1 2 3
+5 6 7 8 9 1 2 3 4
+6 7 8 9 1 2 3 4 5
+7 8 9 1 2 3 4 5 6
+8 9 1 2 3 4 5 6 7
+9 1 2 3 4 5 6 7 8
+1 2 3 4 5 6 7 8 9
+2 3 4 5 6 7 8 9 1
+1 2 3 4 5 6 7 8 9
+9 1 2 3 4 5 6 7 8
+8 9 1 2 3 4 5 6 7
+7 8 9 1 2 3 4 5 6
+6 7 8 9 1 2 3 4 5
+5 6 7 8 9 1 2 3 4
+4 5 6 7 8 9 1 2 3
+3 4 5 6 7 8 9 1 2
+2 3 4 5 6 7 8 9 1
+1 2 3 4 5 6 7 8 9
+```
+
+Приведенная программа реализует кольцевой дек (циклический буфер), который поддерживает различные операции добавления и удаления элементов с обоих концов дека, а также доступ к элементам по индексу.
+
+---
+
+#### 4. Добавьте в класс cdeque реализацию метода reallocate. Проверьте работу класса, используя шаблон программы
+
+```cpp
+#include <iostream>
+#include <algorithm>
+#include <exception>
+
+template <typename T>
+class cdeque {
+private:
+    int _reserved;   //объем зарезервированной памяти
+    int _size;       //количество элементов в деке
+    int _offset;     //смещение (до первого элемента)
+    T* _data;        //указатель на массив
+    void reallocate(int __reserve);
+public:
+   cdeque(int _reserve) {		//инициализирующий конструктор
+      if (_reserve<1)			//пустой элемент, чтобы итераторы на начало и конец не совпали
+         throw std::length_error("reserve must be >0");
+      _reserved=_reserve;
+      _size=0;
+      _offset=0;
+      _data=new T [_reserved];
+   }
+
+
+   ~cdeque() {
+      delete[] _data; 
+   }
+
+
+   int size() {
+      return _size;
+   }
+
+
+   T& operator[](int i) {
+      return _data[(_offset + i)%_reserved];
+   }
+
+
+   T& front() {
+      return _data[_offset];		//_offset указывает на первый элемент
+   }
+
+
+   T& back() {
+      if ((_reserved - _offset) < _size) 			//если конец кольца находится слева от его начала
+            return _data[_size - (_reserved - _offset) - 1];
+        else 										//если элементы помещаются без цикла по кольцу
+            return _data[_offset + _size - 1];
+   }
+
+
+   void push_back(const T &x) {
+      if (_size+1==_reserved)
+         reallocate(2*_reserved);				//чтобы end() не совпал с begin()
+      _size++;
+
+      if (_reserved - _offset < _size)			//если конец кольца находится слева от его начала
+          _data[(_size - (_reserved - _offset)) - 1] = x;
+      else										//если элементы помещаются без цикла по кольцу
+          _data[(_offset + _size) - 1] = x;
+   }
+
+
+   void push_front(const T &x) {
+      if (_size+1==_reserved)
+         reallocate(2*_reserved);			//чтобы end() не совпал с begin()
+      _size++;
+
+      if (_offset == 0) { 					//если первая позиция и есть начало
+            _data[_reserved - 1] = x; 		//записываем в конец
+            _offset = _reserved - 1; 		//обновляем смещение до первого элемента
+      } else {
+            _data[_offset - 1] = x; 		//просто пушим в начало
+            _offset--; 						//обновляем смещение до первого элемента
+      }
+      
+   }
+
+
+   void pop_back() {
+      if ((_reserved - _offset) < _size) 						//если конец левее начала
+            _data[_size - (_reserved - _offset) - 1] = T(); 	//удаляем элемент с конца
+        else
+            _data[_offset + _size - 1] = T();
+        _size--;
+   }
+
+
+   void pop_front() {
+      _data[_offset] = T(); 				//_offset указывает на первый элемент, поэтому его легко удалить
+        if (_offset == _reserved-1) 		//если он был в конце
+            _offset = 0; 					//теперь начало совпадает с фактическим концом
+        else
+            _offset++; 						//теперь первый элемент следующий по списку
+        _size--;
+   }
+};
+
+template <typename T>
+void cdeque<T>::reallocate(int __reserve) {
+
+    T *new_deque = new T[__reserve];	//выделяем новую область памяти по параметру
+    int current = _offset;
+    for (int i = 0; i < _size; i++) { 	//переносим элементы в начало
+        new_deque[i] = _data[current];
+        if (current == (_reserved - 1)) //если дошли до конца старого дека
+            current = 0; 				//переходим в начало старого дека
+        else
+            current++;
+    }
+    _reserved = __reserve; 		//новый размер
+    _offset = 0; 				//т.к. данные теперь идут с начала
+    delete[] _data; 			//освобождаем память, занятую старым деком
+    _data = new_deque; 			//перезаписываем новый дек
+}
+
+int main() {
+  cdeque<int> d(1);
+  for (int j=1;j<10;j++) {
+     d.push_back(j);
+     for (int i=0;i<d.size();i++)
+        std::cout<<d[i]<<' ';
+     std::cout<<std::endl;
+  }
+  for (int j=0;j<10;j++) {
+     for (int i=0;i<d.size();i++)
+        std::cout<<d[i]<<' ';
+     std::cout<<std::endl;
+     int x=d.front();
+     d.pop_front();
+     d.push_back(x);
+  } 
+  for (int j=0;j<11;j++) {
+     for (int i=0;i<d.size();i++)
+        std::cout<<d[i]<<' ';
+     std::cout<<std::endl;
+     int x=d.back();
+     d.pop_back();
+     d.push_front(x);
+  } 
+  cdeque<int> e(1);
+  for (int j=1;j<=10;j++) {
+     if (j&1)
+        e.push_back(j);
+     else
+        e.push_front(j);
+     for (int i=0;i<e.size();i++)
+        std::cout<<e[i]<<' ';
+     std::cout<<std::endl;
+  }
+  return 0;
+}
+```
+```txt
+1
+1 2
+1 2 3
+1 2 3 4
+1 2 3 4 5
+1 2 3 4 5 6
+1 2 3 4 5 6 7
+1 2 3 4 5 6 7 8
+1 2 3 4 5 6 7 8 9
+1 2 3 4 5 6 7 8 9
+2 3 4 5 6 7 8 9 1
+3 4 5 6 7 8 9 1 2
+4 5 6 7 8 9 1 2 3
+5 6 7 8 9 1 2 3 4
+6 7 8 9 1 2 3 4 5
+7 8 9 1 2 3 4 5 6
+8 9 1 2 3 4 5 6 7
+9 1 2 3 4 5 6 7 8
+1 2 3 4 5 6 7 8 9
+2 3 4 5 6 7 8 9 1
+1 2 3 4 5 6 7 8 9
+9 1 2 3 4 5 6 7 8
+8 9 1 2 3 4 5 6 7
+7 8 9 1 2 3 4 5 6
+6 7 8 9 1 2 3 4 5
+5 6 7 8 9 1 2 3 4
+4 5 6 7 8 9 1 2 3
+3 4 5 6 7 8 9 1 2
+2 3 4 5 6 7 8 9 1
+1 2 3 4 5 6 7 8 9
+1
+2 1
+2 1 3
+4 2 1 3
+4 2 1 3 5
+6 4 2 1 3 5
+6 4 2 1 3 5 7
+8 6 4 2 1 3 5 7
+8 6 4 2 1 3 5 7 9
+10 8 6 4 2 1 3 5 7 9
+```
+
+В данном коде добавлена реализация метода reallocate для программы из предыдущего задания.
+
+---
+
+#### 5. Реализовать итератор произвольного доступа для класса cdeque. Добавить в дек методы begin и end. Проверить работу класса, используя шаблон программы, который представлен ниже 
+
+```cpp
+#include <iostream>
+#include <algorithm>
+#include <exception>
+
+template <typename T>
+class cdeque_iterator {
+private:
+   T *_data;
+   int _reserved;
+   int _offset;
+   int _pos;
+public:
+   cdeque_iterator(T* __data, int __reserved, int __offset, int __pos) :
+      _data(__data), _reserved(__reserved), _offset(__offset), _pos(__pos) {}
+
+   cdeque_iterator<T>& operator++() {
+      _pos = (_pos + 1) % _reserved;  // Инкрементируем позицию
+      return *this;
+   }
+
+   cdeque_iterator<T>& operator--() {
+      _pos = (_pos - 1 + _reserved) % _reserved;  // Декрементируем позицию
+      return *this;
+   }
+
+   T& operator*() {
+      int index = (_offset + _pos) % _reserved;  // Вычисляем индекс элемента
+      return _data[index];  // Возвращаем ссылку на элемент
+   }
+  
+   friend bool operator==(const cdeque_iterator<T> &a, const cdeque_iterator<T> &b) {
+      return (a._data == b._data && a._pos == b._pos);
+   }
+
+   friend bool operator!=(const cdeque_iterator<T> &a, const cdeque_iterator<T> &b) {
+      return !(a == b);
+   }
+
+   friend bool operator<(const cdeque_iterator<T> &a, const cdeque_iterator<T> &b) {
+      return (a._pos < b._pos);
+   }
+
+   cdeque_iterator& operator+=(int k) {
+      _pos = (_pos + k) % _reserved;  // Смещаем позицию на k элементов
+      return *this;
+   }
+
+   friend cdeque_iterator operator+(const cdeque_iterator<T> &a, int k) {
+      cdeque_iterator<T> other(a);
+      return other += k;
+   }
+
+   friend cdeque_iterator operator-(const cdeque_iterator<T> &a, int k) {
+      cdeque_iterator<T> other(a);
+      return other += -k;
+   }
+
+   friend int operator-(const cdeque_iterator<T> &a, const cdeque_iterator<T> &b) {
+      return (a._pos - b._pos + a._reserved) % a._reserved;  // Вычисляем разницу позиций
+   }
+};
+
+template <typename T>
+class cdeque {
+private:
+   int _reserved;
+   int _size;
+   int _offset;
+   T* _data;
+   void reallocate(int __reserve);
+public:
+   cdeque(int _reserve) {
+      if (_reserve<1)
+         throw std::length_error("reserve must be >0");
+      _reserved=_reserve;
+      _size=0;
+      _offset=0;
+      _data=new T [_reserved];
+   }
+   ~cdeque() {
+      delete[] _data; 
+   }
+   int size() {
+      return _size;
+   }
+   T& operator[](int i) {
+      int index = (_offset + i) % _reserved;  // Вычисляем индекс элемента
+      return _data[index];  // Возвращаем ссылку на элемент
+   }
+   T& front() {
+      return _data[_offset];
+   }
+   T& back() {
+      int index = (_offset + _size - 1) % _reserved;  // Вычисляем индекс последнего элемента
+      return _data[index];  // Возвращаем ссылку на последний элемент
+   }
+   void push_back(const T &x) {
+      if (_size + 1 == _reserved)
+         reallocate(2 * _reserved);
+      
+      int index = (_offset + _size) % _reserved;  // Вычисляем индекс для добавления элемента
+      _data[index] = x;  // Добавляем элемент в конец дека
+      _size++;  // Увеличиваем размер дека
+   }
+   void push_front(const T &x) {
+      if (_size + 1 == _reserved)
+         reallocate(2 * _reserved);
+      
+      _offset = (_offset - 1 + _reserved) % _reserved;  // Обновляем смещение _offset
+      _data[_offset] = x;  // Добавляем элемент в начало дека
+      _size++;  // Увеличиваем размер дека
+   }
+   void pop_back() {
+      if (_size == 0)
+         throw std::out_of_range("deque is empty");
+
+      _size--;  // Уменьшаем размер дека
+   }
+   void pop_front() {
+      if (_size == 0)
+         throw std::out_of_range("deque is empty");
+
+      _offset = (_offset + 1) % _reserved;  // Увеличиваем смещение _offset
+      _size--;  // Уменьшаем размер дека
+   }
+   cdeque_iterator<T> begin() {
+      return cdeque_iterator<T>(_data, _reserved, _offset, 0);  // Возвращаем итератор на начало дека
+   }
+   cdeque_iterator<T> end() {
+      return cdeque_iterator<T>(_data, _reserved, _offset, _size);  // Возвращаем итератор на конец дека
+   }
+};
+
+template <typename T>
+void cdeque<T>::reallocate(int __reserve) {
+   T* new_data = new T[__reserve];  // Создаем новый массив с новым размером
+
+   for (int i = 0; i < _size; i++) {
+      int index = (_offset + i) % _reserved;  // Вычисляем индекс элемента
+      new_data[i] = _data[index];  // Копируем элементы из старого массива в новый
+   }
+
+   delete[] _data;  // Освобождаем память старого массива
+
+   _data = new_data;  // Обновляем указатель на новый массив
+   _reserved = __reserve;  // Обновляем значение _reserved
+}
+
+int main() {
+   cdeque<int> d(1);
+   for (int j = 1; j < 10; j++) {
+      d.push_back(j);
+      for (int i = 0; i < d.size(); i++)
+         std::cout << d[i] << ' ';
+      std::cout << std::endl;
+   }
+   for (int j = 0; j < 10; j++) {
+      for (int i = 0; i < d.size(); i++)
+         std::cout << d[i] << ' ';
+      std::cout << std::endl;
+      int x = d.front();
+      d.pop_front();
+      d.push_back(x);
+   }
+   for (int j = 0; j < 11; j++) {
+      for (int i = 0; i < d.size(); i++)
+         std::cout << d[i] << ' ';
+      std::cout << std::endl;
+      int x = d.back();
+      d.pop_back();
+      d.push_front(x);
+   }
+   cdeque<int> e(1);
+   for (int j = 1; j <= 10; j++) {
+      if (j & 1)
+         e.push_back(j);
+      else
+         e.push_front(j);
+      for (int i = 0; i < e.size(); i++)
+         std::cout << e[i] << ' ';
+      std::cout << std::endl;
+   }
+   std::sort(e.begin(), e.end());
+   for (int i = 0; i < e.size(); i++)
+      std::cout << e[i] << ' ';
+   std::cout << std::endl;
+   return 0;
+}
 ```
 
 ---
 
-#### 5.
+#### 6. Используя класс аллокатора с логом действия, проверить работу класса std::deque, а именно, как и когда происходит выделение памяти под указатели, при каких условиях указатели перемещаются по существующей памяти, а не переносятся во вновь выделенный участок. Описать алгоритм работы дека с массивом указателей
 
 ```cpp
 #include <iostream>
+#include <deque>
 #include <vector>
-using std::vector;
 
-template <typename T>
-class vector2diter {
-private:
-    static const int chunk_size = (512ULL > sizeof(T) ? 512ULL : sizeof(T)) / sizeof(T);
-    typename vector<T*>::iterator chunk_iter;
-    T* elem_iter;
-
-public:
-    using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T*;
-    using reference = T&;
-
-    vector2diter(typename vector<T*>::iterator c_it, T* e_it) : chunk_iter(c_it), elem_iter(e_it) {}
-
-    vector2diter& operator++() {
-        // Переход к следующему элементу
-        ++elem_iter;
-        if (elem_iter == *chunk_iter + chunk_size) {
-            // Переход к следующему блоку данных
-            ++chunk_iter;
-            elem_iter = *chunk_iter;
-        }
-        return *this;
+template <class T>
+struct myallocator {
+    typedef T value_type;
+    myallocator() {};
+    template <typename U>
+    myallocator(const myallocator<U>&) {};
+    T* allocate(std::size_t n) {
+        std::cout << "\nallocating " << n << " elements\n";
+        return new T[n];
     }
-
-    vector2diter& operator--() {
-        // Переход к предыдущему элементу
-        --elem_iter;
-        if (elem_iter < *chunk_iter) {
-            // Переход к предыдущему блоку данных
-            --chunk_iter;
-            elem_iter = *chunk_iter + chunk_size - 1;
-        }
-        return *this;
-    }
-
-    T& operator*() {
-        // Возвращает ссылку на текущий элемент
-        return *elem_iter;
-    }
-
-    // Операторы сравнения
-    friend bool operator==(const vector2diter<T>& a, const vector2diter<T>& b) {
-        return a.chunk_iter == b.chunk_iter && a.elem_iter == b.elem_iter;
-    }
-
-    friend bool operator!=(const vector2diter<T>& a, const vector2diter<T>& b) {
-        return !(a == b);
-    }
-
-    // Операторы сдвига на произвольное значение
-    vector2diter& operator+=(difference_type n) {
-        // Переход на n позиций вперед
-        difference_type pos = elem_iter - *chunk_iter;
-        pos += n;
-        if (pos >= chunk_size) {
-            // Переход к следующему блоку данных
-            difference_type chunk_offset = pos / chunk_size;
-            chunk_iter += chunk_offset;
-            elem_iter = *chunk_iter + (pos % chunk_size);
-        }
-        else if (pos < 0) {
-            // Переход к предыдущему блоку данных
-            difference_type chunk_offset = -1 - ((-pos - 1) / chunk_size);
-            chunk_iter += chunk_offset;
-            elem_iter = *chunk_iter + (chunk_size - (-pos - 1) % chunk_size - 1);
-        }
-        else {
-            // Позиция находится в пределах текущего блока данных
-            elem_iter = *chunk_iter + pos;
-        }
-        return *this;
-    }
-
-    vector2diter operator+(difference_type n) const {
-        // Создание нового итератора, сдвинутого на n позиций вперед
-        vector2diter iter(*this);
-        iter += n;
-        return iter;
-    }
-
-    vector2diter& operator-=(difference_type n) {
-        // Переход на n позиций назад
-        return *this += -n;
-    }
-
-    vector2diter operator-(difference_type n) const {
-        // Создание нового итератора, сдвинутого на n позиций назад
-        vector2diter iter(*this);
-        iter -= n;
-        return iter;
-    }
-
-    difference_type operator-(const vector2diter& other) const {
-        // Вычисление разницы между двумя итераторами
-        difference_type pos1 = elem_iter - *chunk_iter;
-        difference_type pos2 = other.elem_iter - *other.chunk_iter;
-        return (chunk_iter - other.chunk_iter) * chunk_size + (pos1 - pos2);
-    }
-
-    T& operator[](difference_type n) const {
-        // Возвращает ссылку на элемент, смещенный на n позиций от текущего итератора
-        return *(*this + n);
-    }
-
-    bool operator<(const vector2diter& other) const {
-        // Проверка, находится ли текущий итератор левее other
-        return chunk_iter < other.chunk_iter || (chunk_iter == other.chunk_iter && elem_iter < other.elem_iter);
-    }
-
-    bool operator>(const vector2diter& other) const {
-        // Проверка, находится ли текущий итератор правее other
-        return chunk_iter > other.chunk_iter || (chunk_iter == other.chunk_iter && elem_iter > other.elem_iter);
-    }
-
-    bool operator<=(const vector2diter& other) const {
-        // Проверка, находится ли текущий итератор левее или совпадает с other
-        return !(other < *this);
-    }
-
-    bool operator>=(const vector2diter& other) const {
-        // Проверка, находится ли текущий итератор правее или совпадает с other
-        return !(*this < other);
+    void deallocate(T* p, std::size_t n) {
+        std::cout << "\ndeallocating " << n << " elements\n";
+        delete[] p;
     }
 };
-
-template <typename T>
-class vector2d {
-private:
-    static const int chunk_size = (512ULL > sizeof(T) ? 512ULL : sizeof(T)) / sizeof(T);
-    int n;
-    vector<T*> chunks;
-
-public:
-    vector2d() : n(0) {
-        chunks.push_back(new T[chunk_size]);
-    }
-
-    vector2d(int _n, const T& val = T()) : n(_n) {
-        int chunk_count = 1 + n / chunk_size;
-        int last_chunk_size = n % chunk_size;
-        for (int i = 0; i < chunk_count - 1; i++) {
-            chunks.push_back(new T[chunk_size]);
-            std::fill(chunks[i], chunks[i] + chunk_size, val);
-        }
-        if (last_chunk_size > 0) {
-            chunks.push_back(new T[last_chunk_size]);
-            std::fill(chunks[chunk_count - 1], chunks[chunk_count - 1] + last_chunk_size, val);
-        }
-    }
-
-    T& operator[](int i) {
-        int chunk_index = i / chunk_size;
-        int element_index = i % chunk_size;
-        return chunks[chunk_index][element_index];
-    }
-
-    int size() {
-        return n;
-    }
-
-    void resize(int newsize, const T& val = T()) {
-        int new_chunk_count = 1 + newsize / chunk_size;
-        if (new_chunk_count > chunks.size()) {
-            for (int i = chunks.size(); i < new_chunk_count; i++) {
-                if (i == new_chunk_count - 1) {
-                    chunks.push_back(new T[newsize % chunk_size]);
-                    std::fill(chunks[i], chunks[i] + newsize % chunk_size, val);
-                }
-                else {
-                    chunks.push_back(new T[chunk_size]);
-                    std::fill(chunks[i], chunks[i] + chunk_size, val);
-                }
-            }
-        }
-        else if (new_chunk_count < chunks.size()) {
-            for (int i = new_chunk_count; i < chunks.size(); i++) {
-                delete[] chunks[i];
-            }
-            chunks.resize(new_chunk_count);
-        }
-        n = newsize;
-    }
-
-    void push_back(const T& val) {
-        if (n % chunk_size == 0) {
-            chunks.push_back(new T[chunk_size]);
-        }
-        chunks.back()[n % chunk_size] = val;
-        n++;
-    }
-
-    void pop_back() {
-        if (n > 0) {
-            n--;
-            if (n % chunk_size == 0 && chunks.size() > 1) {
-                delete[] chunks.back();
-                chunks.pop_back();
-            }
-        }
-    }
-
-    vector2diter<T> begin() {
-        return vector2diter<T>(chunks.begin(), chunks[0]);
-    }
-
-    vector2diter<T> end() {
-        if (chunks.empty()) {
-            return vector2diter<T>(chunks.begin(), nullptr);
-        }
-        else {
-            return vector2diter<T>(chunks.end() - 1, chunks.back() + n % chunk_size);
-        }
-    }
-
-    void log() {
-        std::cout << "size=" << n << std::endl;
-        std::cout << "chunks=" << chunks.size() << std::endl;
-        for (auto p : chunks)
-            std::cout << p << ' ';
-        std::cout << std::endl;
-    }
-};
+template <class T, class U>
+bool operator==(const myallocator<T>&, const myallocator<U>&) { return true; }
+template <class T, class U>
+bool operator!=(const myallocator<T>&, const myallocator<U>&) { return false; }
 
 using namespace std;
-int main() {
-    vector2d<double> v(100, 0.5);
-    v.log();
-    v.resize(50);
-    v.log();
-    v.resize(128, 0.1);
-    v.log();
-    double d = 0;
-    for (auto& x : v)
-        x = d += 0.1;
-    auto it = lower_bound(v.begin(), v.end(), 5.0);
-    cout << *it << endl;
-    it += 35;
-    cout << *it << endl;
-    it += -55;
-    cout << *it << endl;
+
+void test1(int n, int m) {
+    deque<int, myallocator<int>> d;
+    cout << "\npushing\n";
+    for (int i = 1; i <= n; i++) {
+        cout << i << ' ';
+        d.push_back(i);
+    }
+    cout << "\npush and pop\n";
+    for (int i = 1; i <= m; i++) {
+        cout << i << ' ';
+        d.push_back(d.front());
+        d.pop_front();
+    }
 }
 
+void test2(const vector<int>& len) {
+    deque<int, myallocator<int>> d;
+    for (auto ln : len) {
+        cout << "len=" << ln << endl;
+        d.resize(ln, 0);
+    }
+}
+
+
+int main() {
+    test1(200, 10000);
+    test2({ 10,20,30,100,200,300,1000,2000,5000,10000,20000 });
+    return 0;
+}
 ```
-```txt
-chunks=1
-0x5555ee35eeb0 
-size=128
-chunks=3
-0x5555ee35eeb0 0x5555ee35f640 0x5555ee35f0c0 
-5.1
-8.6
-3.1
-```
+
+Данный код содержит две функции для тестирования класса ```std::deque``` с аллокатором ```myallocator```, который ведет лог действий при выделении и освобождении памяти.
+
+Функция ```test1``` создает дек ```d``` с аллокатором ```myallocator<int>``` и заполняет его значениями от ```1``` до ```n``` с помощью операции ```push_back```. Затем происходит m итераций, в каждой из которых первый элемент дека перемещается в конец с помощью ```push_back```, а затем удаляется с помощью ```pop_front```. Цель этой функции - проверить, как и когда происходит выделение и освобождение памяти в деке при добавлении и удалении элементов.
+
+Функция ```test2``` создает пустой дек ```d``` с аллокатором ```myallocator<int>```. Затем происходит цикл по вектору ```len```, в котором каждый элемент ```ln``` используется для изменения размера дека с помощью операции ```resize```. Цель этой функции - проверить, как и когда происходит выделение и освобождение памяти в деке при изменении его размера.
+
+В ```main``` функции вызываются обе тестовые функции с различными параметрами для проверки работы дека с аллокатором ```myallocator``` и выводится лог действий при выделении и освобождении памяти.
+
+Программа выводит информацию о выделении и освобождении памяти, чтобы показать, как и когда происходят эти операции при использовании ```std::deque``` с пользовательским аллокатором.
+
+---
+
+При добавлении элементов в дек с помощью операции ```push_back```, выделение памяти происходит следующим образом:
+
+При добавлении первого элемента в пустой дек выделяется блок памяти достаточного размера для хранения этого элемента.
+
+При добавлении каждого последующего элемента проверяется, достаточно ли места в выделенном блоке для хранения нового элемента. Если места достаточно, новый элемент помещается в существующий блок.
+
+Если места в выделенном блоке недостаточно для добавления нового элемента, дек выделяет новый блок памяти большего размера, копирует все существующие элементы в новый блок и добавляет новый элемент в конец нового блока. При этом происходит освобождение предыдущего блока памяти.
+
+Таким образом, выделение памяти происходит при необходимости увеличения размера блока, а освобождение памяти происходит при переносе элементов в новый блок и при явном освобождении дека.
+
+При удалении элементов из дека с помощью операции ```pop_front```, освобождение памяти происходит следующим образом:
+
+При удалении первого элемента из дека освобождения памяти не происходит, так как блок, содержащий первый элемент, все еще используется для хранения остальных элементов.
+
+При удалении каждого последующего элемента дека, если блок, содержащий этот элемент, больше не содержит других элементов, освобождается соответствующий блок памяти.
+
+Таким образом, освобождение памяти происходит при удалении элементов, если блоки становятся пустыми и больше не нужны для хранения элементов.
+
+
 
 
 
@@ -759,14 +778,8 @@ chunks=3
 
 ### SRC
 
-[Двухуровневая организация памяти](https://www.youtube.com/watch?v=J1kY7Av5TwM)
+[Дек в С++ и Python](https://youtu.be/4ffpSIxj5AA)
 
-[Итераторы для динамического массива с двухуровневой организацие памяти](https://youtu.be/3DToWXBu6Uw)
+[Способы реализации дека](https://youtu.be/8up4wiEWBOQ)
 
-[Рекомендации по выполнению задания 2](https://youtu.be/JqUBR5tZHro)
-
-[Рекомендации по выполнению задания 3](https://youtu.be/wctt7RRB78w)
-
-[Рекомендации по выполнению задания 4](https://youtu.be/QL4JgPvS1_E)
-
-[Рекомендации по выполнению задания 5](https://youtu.be/K2ked6XTULo)
+[Рекомендации по выполнению заданий](https://youtu.be/TxdbdWXhcZ0)
