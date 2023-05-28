@@ -127,13 +127,137 @@
 
 ---
 
-#### 7. **Сделайте копию файла с классом `bstree`. Далее потребуется выполнить доработку класс так, чтобы он реализовывал АВЛ-дерево. Реализуйте два статических метода `void rotate_left(basenode*)` и `void rotate_right(basenode*). Для тестирования добавьте в класс методы** 
+#### 7. Сделайте копию файла с классом `bstree`. Далее потребуется выполнить доработку класс так, чтобы он реализовывал АВЛ-дерево. Реализуйте два статических метода `void rotate_left(basenode*)` и `void rotate_right(basenode*). Для тестирования добавьте в класс методы
 ```
 void rotate_left(iterator it) {
         rotate_left(it node);
 }
 ```
-#### **и аналогичный для правого поворота**
+#### и аналогичный для правого поворота
+
+```cpp
+template <typename T>
+void avl_tree<T>::rotate_left(basenode* node) {
+    basenode* pivot = node->right;  // Сохраняем указатель на правого потомка узла node в переменной pivot.
+    node->right = pivot->left;      // Переназначаем правого потомка узла node на левого потомка узла pivot.
+
+    if (pivot->left != nullptr) {
+        pivot->left->parent = node; // Если у узла pivot есть левый потомок, то обновляем его родителя на node.
+    }
+
+    pivot->parent = node->parent;   // Обновляем родителя узла pivot на родителя узла node.
+
+    if (node->parent == &header) {
+        header.left = pivot;        // Если node был корневым узлом, то обновляем корень дерева на pivot.
+    } else if (node == node->parent->left) {
+        node->parent->left = pivot;  // Если node был левым потомком своего родителя, то обновляем левого потомка родителя на pivot.
+    } else {
+        node->parent->right = pivot; // Иначе обновляем правого потомка родителя на pivot.
+    }
+
+    pivot->left = node;              // Делаем узел node левым потомком узла pivot.
+    node->parent = pivot;            // Обновляем родителя узла node на pivot.
+
+    // После поворота пересчитываем высоты узлов node и pivot.
+    node->height = std::max(node_height(node->left), node_height(node->right)) + 1;
+    pivot->height = std::max(node_height(pivot->left), node_height(pivot->right)) + 1;
+}
+template <typename T>
+void avl_tree<T>::rotate_right(basenode* node) {
+    basenode* pivot = node->left;   // Сохраняем указатель на левого потомка узла node в переменной pivot.
+    node->left = pivot->right;      // Переназначаем левого потомка узла node на правого потомка узла pivot.
+
+    if (pivot->right != nullptr) {
+        pivot->right->parent = node; // Если у узла pivot есть правый потомок, то обновляем его родителя на node.
+    }
+
+    pivot->parent = node->parent;   // Обновляем родителя узла pivot на родителя узла node.
+
+    if (node->parent == &header) {
+        header.left = pivot;        // Если node был корневым узлом, то обновляем корень дерева на pivot.
+    } else if (node == node->parent->right) {
+        node->parent->right = pivot; // Если node был правым потомком своего родителя, то обновляем правого потомка родителя на pivot.
+    } else {
+        node->parent->left = pivot;  // Иначе обновляем левого потомка родителя на pivot.
+    }
+
+    pivot->right = node;             // Делаем узел node правым потомком узла pivot.
+    node->parent = pivot;            // Обновляем родителя узла node на pivot.
+
+    // После поворота пересчитываем высоты узлов node и pivot.
+    node->height = std::max(node_height(node->left), node_height(node->right)) + 1;
+    pivot->height = std::max(node_height(pivot->left), node_height(pivot->right)) + 1;
+}
+```
+---
+
+#### 8. Добавьте в класс узла следующие составляющие:
+
++ Добавьте в класс узла поле `height` типа `char`. Добавьте в конструктор инициализацию этого поля единицей.
+
+```cpp
+template <typename T>
+class avl_tree {
+    struct basenode {
+        basenode* left;
+        basenode* right;
+        basenode* parent;
+        char height;
+        basenode(basenode* p) : left(nullptr), right(nullptr), parent(p), height(1) {}
+    };
+```
+
++ Добавьте статический метод `char_height(basenode*)` которая будет возвращать высоту поддерева, с учетом того, что параметр может быть пустым указателем. 
+
+```cpp
+template <typename T>
+class avl_tree {
+    // ...
+
+    static char char_height(basenode* node) {
+        if (node == nullptr) {
+            return 0;
+        }
+        return static_cast<bstnode*>(node)->height;
+    }
+
+    // ...
+};
+```
+
++ Добавьте в функицю `dfs` вывод высоты текущего поддерева
+
+```cpp
+void avl_tree<T>::dfs(int dep, basenode* node) {
+    if (node == nullptr)
+        return;
+    dfs(dep + 1, node->left);
+    std::cout.width(dep * 5);
+    std::cout << *iterator(node) << ' ' << (node) << ' ' << node->parent << ' ' << int(char_height(node)) << std::endl;
+    dfs(dep + 1, node->right);
+}
+```
++ Начините разрабатывать методы `void balancing_after_insert(basenode*)` и `void balancing_after_erase(basenode*)`, которые будут пересчитывать веса вершин (пока без самой балансировки). Вставьте вызовы этих методов во все требуемые места программы. Подсказка: Над этим вопросом следует внимательно подумать. Для каждого из случаев эти методы требуется применять к различным узлам. На этом этапе реализация методов не будет различаться. 
+
+```cpp
+template <typename T>
+void avl_tree<T>::balancing_after_insert(basenode* node) {
+    while (node != nullptr) {
+        node->weight = std::max(char_height(node->left), char_height(node->right)) + 1;
+        node = node->parent;
+    }
+}
+
+template <typename T>
+void avl_tree<T>::balancing_after_erase(basenode* node) {
+    balancing_after_insert(node);
+}
+```
++ Проверьте работу на прилагаемых тестах
+
+---
+
+#### 9. Завершите написание методов `void balancing_after_insert(basenode*)` и `void balancing_after_erase(basenode*)`, добавив в них вызовы поворотов. Обратите внимание на пересчет весов. Реализации методов будут различаться только по пересчету весов и по выходу из цикла. 
 
 [Сбалансированные деревья](https://youtu.be/w0Y3tWPcbyg)
 
