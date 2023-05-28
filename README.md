@@ -849,11 +849,13 @@ void bstree<T>::erase(bstree<T>::iterator it) {
         // Находим наименьший узел в правом поддереве (следующий по значению)
         basenode* successor = next(node);
 
-        // Заменяем значение удаляемого узла значением наименьшего узла
-        static_cast<bstnode*>(node)->key = static_cast<bstnode*>(successor)->key;
+        if (successor != nullptr) {
+            // Заменяем значение удаляемого узла значением наименьшего узла
+            static_cast<bstnode*>(node)->key = static_cast<bstnode*>(successor)->key;
 
-        // Рекурсивно удаляем наименьший узел в правом поддереве
-        erase(successor);
+            // Рекурсивно удаляем наименьший узел в правом поддереве
+            erase(successor);
+        }
     }
 }
 
