@@ -66,5 +66,67 @@ typename avl_tree<T>::iterator avl_tree<T>::upper_bound(const T& x) const {
 
 + После завершения цикла проверяется значение `ans`. Если `ans` остается равным `nullptr`, значит, не был найден ни один элемент, удовлетворяющий условию, и возвращается итератор, указывающий на конец дерева (`nullptr`). В противном случае возвращается итератор, указывающий на найденный узел (`ans`).
 
+---
 
 ### Кроме этого, реализуйте операторы присваивания и копирующие конструкторы с семантикой копирования и с семантикой перемещения.
+
+```cpp
+template <typename T>
+class avl_tree {
+    // ...
+public:
+    // ...
+
+    // Копирующий конструктор с семантикой копирования
+    avl_tree(const avl_tree& other) : header(nullptr), _size(0) {
+        // Создаем новое дерево и копируем элементы из другого дерева
+        for (const T& value : other) {
+            insert(value);
+        }
+    }
+
+    // Оператор присваивания с семантикой копирования
+    avl_tree& operator=(const avl_tree& other) {
+        if (this != &other) {
+            // Очищаем текущее дерево
+            clear();
+
+            // Создаем новое дерево и копируем элементы из другого дерева
+            for (const T& value : other) {
+                insert(value);
+            }
+        }
+        return *this;
+    }
+
+    // Копирующий конструктор с семантикой перемещения
+    avl_tree(avl_tree&& other) noexcept : header(nullptr), _size(0) {
+        // Перемещаем ресурсы из другого дерева в текущее дерево
+        header.left = other.header.left;
+        _size = other._size;
+
+        // Обнуляем ресурсы в другом дереве
+        other.header.left = nullptr;
+        other._size = 0;
+    }
+
+    // Оператор присваивания с семантикой перемещения
+    avl_tree& operator=(avl_tree&& other) noexcept {
+        if (this != &other) {
+            // Очищаем текущее дерево
+            clear();
+
+            // Перемещаем ресурсы из другого дерева в текущее дерево
+            header.left = other.header.left;
+            _size = other._size;
+
+            // Обнуляем ресурсы в другом дереве
+            other.header.left = nullptr;
+            other._size = 0;
+        }
+        return *this;
+    }
+
+    // ...
+};
+```
