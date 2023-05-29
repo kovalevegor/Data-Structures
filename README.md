@@ -261,6 +261,9 @@ void avl_tree<T>::balancing_after_erase(basenode* node) {
 
 ```cpp
 #include <iostream>
+#include <map>
+
+#include <iostream>
 
 #ifndef SRTTREE_H
 #define SRTTREE_H
@@ -376,7 +379,8 @@ public:
     static int char_height(basenode* node) {
         if (node == nullptr) {
             return 0; // Пустое поддерево имеет высоту 0
-        } else {
+        }
+        else {
             return node->height; // Возвращаем значение поля height объекта node
         }
     }
@@ -507,11 +511,11 @@ public:
         return iterator(ans);
     }
 
-    iterator insert(const T& key) {
+    std::pair<iterator, bool> insert(const T& key) {
         if (header.left == nullptr) {
             header.left = new bstnode(key, &header);
             ++_size;
-            return iterator(header.left);
+            return std::make_pair(iterator(header.left), true);
         }
 
         basenode* parent = &header;
@@ -527,7 +531,7 @@ public:
             }
             else {
                 // Вставка дубликата не разрешена
-                return iterator(nullptr);
+                return std::make_pair(iterator(nullptr), false);
             }
         }
 
@@ -576,8 +580,9 @@ public:
             cur_node = cur_node->parent;
         }
         balancing_after_insert(cur_node);
-        return iterator(new_node);
+        return std::make_pair(iterator(new_node), true);
     }
+
 
     void erase(const T& key) {
         basenode* node = header.left;
