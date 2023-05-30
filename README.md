@@ -433,14 +433,252 @@ int main(){
 
 #### 7. Используя программы из предыдущих заданий и найденное ранее число _m_, создайте тестовый файл из 10 групп тестов. В каждой группе должно быть по три теста с длинами равными _0:2m, 0:4m, 0:6m, 0:8m, m, 1:2m, 1:4m, 1:6m, 1:8m, 2m_. Проверьте время сортировки на этих группах тестов. В отчет запишите данне из файла protocol.txt
 
+```cpp
+#include <iostream>
+#include <chrono>
+#include <fstream>
+#include <vector>
+#include <set>
+#include <algorithm>
+#include <list>
+
+using namespace std;
+
+double sort1(vector<int> V){
+  auto t1=chrono::high_resolution_clock::now();
+  
+   for (int i = 0; i < V.size() - 1; i++) {
+        for (int j = 0; j < V.size() - i - 1; j++) {
+            if (V[j] > V[j + 1]) {
+                int a = V[j];
+                V[j] = V[j + 1];
+                V[j + 1] = a;
+            }
+        }
+    }
+  auto t2=chrono::high_resolution_clock::now();
+  chrono::duration<double> dur=t2-t1;
+  return dur.count();
+}
+
+
+
+int main(){
+  ios_base::sync_with_stdio(false);
+  cin.tie(0);cout.tie(0);
+
+  ifstream fin("output.txt");
+  ofstream fout("protocol.txt");
+
+  int groups, tests, dl;
+  fin>>groups;
+  int h=0;
+  double t1,t2,t3;
+
+  for(int i=0; i<groups; i++){
+    fin>>tests>>dl;
+
+    vector<int> v(dl);
+    vector<double> sr(5);
+    vector<double> mini(5*tests);
+    int n=0;
+
+    for(int j=0; j<tests; j++){
+
+      for(int k=0; k<dl; k++)
+        fin>>v[k];
+      t1=sort1(v);
+      t2=sort1(v);
+      t3=sort1(v);
+      mini[n]=min({t1,t2,t3});
+
+      
+      n+=5;
+    }
+   for(int i=0; i<5; i++){
+     h=i;
+     for(h; h<mini.size(); h+=5)
+     	sr[i]+=mini[h];
+     sr[i]/=tests;
+   }
+   fout<<dl<<' '<<' '<<sr[0]<<'\n';
+
+}
+  return 0;
+}
+```
+
 
 #### 8.
+
+```python
+import matplotlib.pyplot as plt
+
+dl=[]
+s1 = []
+s2 = []
+s3 = []
+s4 = []
+s5 = []
+
+with open("protocol.txt", 'r') as fin:
+    for str in fin:
+        a = list(map(float, str.split()))
+
+        dl.append(int(a[0]))
+        s1.append(a[1])
+        s2.append(a[2])
+        s3.append(a[3])
+        s4.append(a[4])
+        s5.append(a[5])
+
+plt.plot(dl, s1, dl, s2, dl, s3, dl, s4, dl, s5)
+plt.legend(['sort', 'stable_sort', 'sort_heap', 'set', 'list'])
+plt.show()
+```
+
+```
+protocol.txt
+
+400000  0.177193 0.204968 0.413562 0.551875 0.550258
+800000  0.459126 0.508504 1.01687 1.34236 1.29557
+1200000  0.697849 0.803045 1.57415 2.13733 2.04891
+1600000  0.948925 1.08195 2.17168 2.96782 2.79744
+2000000  1.32735 1.64619 3.23357 3.79455 3.5024
+2400000  1.4881 1.64922 3.39567 4.70083 4.42133
+2800000  1.75307 1.96671 3.94915 5.58853 5.15345
+3200000  2.02279 2.25556 4.62188 6.48013 6.04289
+3600000  2.29864 2.55916 5.20503 7.36648 6.70942
+4000000  2.53996 2.95118 5.82939 8.37552 7.5642
+```
 
 #### 9.
 
 #### 10.
 
-#### 11.
+#### 11. 
+
+**java**
+
+```java
+package javaapplication34;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Scanner;
+public class JavaApplication34 {
+    
+    public static double sort(int[] v){
+        int[] v1 = v.clone();
+        long t = System.nanoTime();
+        for (int i = 0;i < v1.length; i++){
+            for(int j = i; j < v1.length - 1;j++){
+                if(v1[j] > v1[j+1]) {
+                    int a = v1[j];
+                    v1[j] = v1[j+1];
+                    v1[j+1] = a;
+                }
+            }
+        }
+        return ((double) (System.nanoTime() - t)/1000000000.0);
+    }
+    public static void main(String[] args) throws IOException {
+        System.out.println(new File("").getAbsolutePath());
+        File file = new File("output.txt");
+        Scanner in = new Scanner(file);
+        
+        int n = in.nextInt();
+        for(int i = 0; i < n; i++){
+            int tests = in.nextInt();
+            int dl = in.nextInt();
+            double sums = 0;
+            
+            for(int j = 0; j < tests;j++){
+                int[] v = new int[dl];
+                for(int k = 0; k < dl; k++){
+                    v[k] = in.nextInt();
+                }
+                sums += Math.min(Math.min(sort(v),sort(v)),sort(v));
+            }
+            System.out.println(dl + "  " + sums/tests);
+        }
+    }
+}
+```
+
+```
+java output
+
+2000  0.012021567333333332
+4000  0.03109113366666667
+6000  0.054992067000000006
+8000  0.088008033
+10000  0.11898740000000001
+12000  0.16461966633333333
+14000  0.2240137336666667
+16000  0.29743863333333337
+18000  0.38308086599999996
+20000  0.4769536003333334
+```
+
+**python**
+
+
+```python
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 10 11:24:35 2023
+
+@author: gogak
+"""
+import random
+
+special = '!#?'
+
+password = ''
+type1, type2, type3, type4 = 0, 0, 0, 0
+for i in range (0, 4, 1):
+    
+    for j in range (0, 4, 1):
+        type = random.randrange(0,4)
+        if type == 0:
+            password += chr(random.randrange(65, 90))
+            type1 += 1
+        elif type == 1:
+            password += chr(random.randrange(97, 122))
+            type2 += 1
+        elif type == 2:
+            password += str(random.randrange(0, 10))
+            type3 += 1
+        elif type == 3:
+            password += special[random.randrange(0, 3)]
+            type4 += 1
+    password += '-'
+    
+print(type1)
+print(type2)
+print(type3)
+print(type4)
+
+        
+print (password[:-1], end='\n')
+```
+
+```
+python output
+
+2000 0.8118159770965576
+4000 2.9580763975779214
+6000 7.9191586176554365
+8000 12.436465581258139
+10000 16.410430669784546
+12000 23.874129056930542
+14000 31.75672483444214
+16000 42.5342071056366
+18000 56.91302458445231
+20000 70.37112991015117
+```
 
 #### 12.
 
