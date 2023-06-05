@@ -97,8 +97,8 @@ public:
     // Копирующий конструктор с семантикой копирования
     avl_tree(const avl_tree& other) : header(nullptr), _size(0) {
         // Создаем новое дерево и копируем элементы из другого дерева
-        for (const T& value : other) {
-            insert(value);
+        for (const T& key : other) {
+            insert(key);
         }
     }
 
@@ -109,8 +109,8 @@ public:
             clear();
 
             // Создаем новое дерево и копируем элементы из другого дерева
-            for (const T& value : other) {
-                insert(value);
+            for (const T& key : other) {
+                insert(key);
             }
         }
         return *this;
