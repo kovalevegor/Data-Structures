@@ -260,106 +260,81 @@ void avl_tree<T>::balancing_after_erase(basenode* node) {
 ### Работающая программа 
 
 ```cpp
-#include <iostream>
-#include <map>
-
-#include <iostream>
-
-#ifndef SRTTREE_H
-#define SRTTREE_H
-
 #include <utility>
 #include <iostream>
 #include <initializer_list>
 #include <map>
 
+#ifndef SRTTREE_H
+#define SRTTREE_H
+
 template <typename T>
-class avl_tree {
-    struct basenode {
+class avltree
+{
+    struct basenode
+    {
         basenode* left;
         basenode* right;
         basenode* parent;
-        char height;
-        basenode(basenode* p) : left(nullptr), right(nullptr), parent(p), height(1) {}
+        basenode(basenode* p) : left(nullptr), right(nullptr), parent(p) {}
     };
-
-    struct bstnode : basenode {
+    struct avlnode : basenode
+    {
         T key;
-        int height;
-        bstnode(T k, basenode* p) : basenode(p), key(k), height(1) {}
+        char height;
+        avlnode(T k, basenode* p) : basenode(p), key(k), height(1) {}
     };
-
-    // Методы для поиска следующего и предыдущего узла для итератора
     static basenode* next(basenode* node);
     static basenode* prev(basenode* node);
-    void balancing_after_insert(basenode* node);
-    void balancing_after_erase(basenode* node);
 
-    // Методы для поворотов
-    //void rotate_left(basenode* node);
-    //void rotate_right(basenode* node);
-
-    // Итератор
-
-    class iterator {
-    private:
+    class iterator
+    {
         basenode* node;
 
     public:
-        friend class avl_tree<T>;
-
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using reference = T&;
-        using pointer = T*;
-        using iterator_category = std::bidirectional_iterator_tag;
+        friend class avltree<T>;
+        typedef std::bidirectional_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef ptrdiff_t difference_type;
+        typedef T& reference;
+        typedef T* pointer;
 
         iterator() : node(nullptr) {}
         iterator(basenode* nd) : node(nd) {}
 
-
-        reference operator*() {
-            return static_cast<bstnode*>(node)->key;
+        const T& operator*()
+        {
+            return static_cast<const avlnode*>(node)->key;
         }
-
-        operator basenode* () const {
-            return node;
-        }
-
-        iterator& operator++() {
+        iterator& operator++()
+        {
             node = next(node);
             return *this;
         }
-
-        iterator operator++(int) {
-            iterator temp = *this;
-            ++(*this);
-            return temp;
-        }
-
-        iterator& operator--() {
+        iterator& operator--()
+        {
             node = prev(node);
             return *this;
         }
-
-        iterator operator--(int) {
-            iterator temp = *this;
-            --(*this);
-            return temp;
+        iterator operator++(int)
+        {
+            iterator t = *this;
+            node = next(node);
+            return t;
         }
-
-
-
-        bool operator==(const iterator& other) const {
+        iterator operator--(int)
+        {
+            iterator t = *this;
+            node = prev(node);
+            return t;
+        }
+        bool operator==(const iterator& other)
+        {
             return node == other.node;
         }
-
-        bool operator!=(const iterator& other) const {
-            return !(*this == other);
-        }
-
-        operator const T& () const {
-            return static_cast<bstnode*>(node)->key;
+        bool operator!=(const iterator& other)
+        {
+            return node != other.node;
         }
     };
 
@@ -367,1315 +342,344 @@ private:
     int _size;
     basenode header;
     void rec_clear(basenode*);
-    void dfs(int dep, basenode* node) {
-        if (node == nullptr)
-            return;
-        dfs(dep + 1, node->left);
-        std::cout.width(dep * 5);
-        std::cout << *iterator(node) << ' ' << (node) << ' ' << node->parent << ' ' << int(char_height(node)) << std::endl;
-        dfs(dep + 1, node->right);
-    };
+    void dfs(int dep, basenode* node);
+
 public:
-    static int char_height(basenode* node) {
-        if (node == nullptr) {
-            return 0; // Пустое поддерево имеет высоту 0
-        }
-        else {
-            return node->height; // Возвращаем значение поля height объекта node
-        }
+    avltree() : header(nullptr), _size(0) {}
+    avltree(const std::initializer_list<T>& lst) : header(nullptr), _size(0)
+    {
+        for (T q : lst)
+            insert(q);
     }
-    void rotate_left(avl_tree<T>::basenode* node) {
-        basenode* right_child = node->right;
-        node->right = right_child->left;
-        if (right_child->left != nullptr) {
-            right_child->left->parent = node;
-        }
-        right_child->parent = node->parent;
-        if (node->parent->left == node) {
-            node->parent->left = right_child;
-        }
-        else {
-            node->parent->right = right_child;
-        }
-        right_child->left = node;
-        node->parent = right_child;
-
-        // Обновление высоты узлов
-        int left_height = (node->left != nullptr) ? static_cast<bstnode*>(node->left)->height : 0;
-        int right_height = (node->right != nullptr) ? static_cast<bstnode*>(node->right)->height : 0;
-        node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-
-        left_height = (right_child->left != nullptr) ? static_cast<bstnode*>(right_child->left)->height : 0;
-        right_height = (right_child->right != nullptr) ? static_cast<bstnode*>(right_child->right)->height : 0;
-        right_child->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-    }
-    void rotate_right(avl_tree<T>::basenode* node) {
-        basenode* left_child = node->left;
-        node->left = left_child->right;
-        if (left_child->right != nullptr) {
-            left_child->right->parent = node;
-        }
-        left_child->parent = node->parent;
-        if (node->parent->left == node) {
-            node->parent->left = left_child;
-        }
-        else {
-            node->parent->right = left_child;
-        }
-        left_child->right = node;
-        node->parent = left_child;
-
-        // Обновление высоты узлов
-        int left_height = (node->left != nullptr) ? static_cast<bstnode*>(node->left)->height : 0;
-        int right_height = (node->right != nullptr) ? static_cast<bstnode*>(node->right)->height : 0;
-        node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-
-        left_height = (left_child->left != nullptr) ? static_cast<bstnode*>(left_child->left)->height : 0;
-        right_height = (left_child->right != nullptr) ? static_cast<bstnode*>(left_child->right)->height : 0;
-        left_child->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-    }
-    avl_tree() : header(nullptr), _size(0) {}
-    avl_tree(const std::initializer_list<T>& lst) : header(nullptr), _size(0) {
-        // Вписать построение дерева по списку инициализации
-        for (const T& value : lst) {
-            insert(value);
-        }
-    }
-
-    ~avl_tree() {
+    ~avltree()
+    {
         clear();
     }
-
-    int size() {
+    int size()
+    {
         return _size;
     }
-
-    void print() {
+    void print()
+    {
         std::cout << "size=" << _size << std::endl;
         dfs(0, header.left);
     }
-
-    void dump() {
+    void dump()
+    {
         std::map<basenode*, int> mn;
         int num = 1;
         dfs_dump(num, header.left, mn);
     }
-
-    void dfs_dump(int& num, basenode* node, std::map<basenode*, int>& mn) {
-        mn[node] = num++;
-        if (node->left != nullptr)
-            dfs_dump(num, node->left, mn);
-        if (node->right != nullptr)
-            dfs_dump(num, node->right, mn);
-    }
-
-    void clear() {
-        if (header.left != nullptr) {
-            rec_clear(header.left);
-            header.left = nullptr;
-        }
-        _size = 0;
-    }
-
-    iterator find(const T& key) const {
-        basenode* node = header.left;
-        while (node != nullptr) {
-            if (key < static_cast<bstnode*>(node)->key) {
-                node = node->left;
-            }
-            else if (static_cast<bstnode*>(node)->key < key) {
-                node = node->right;
-            }
-            else {
-                return iterator(node);
-            }
-        }
-        return iterator(nullptr);
-    }
-
-    iterator lower_bound(const T& key) const {
-        basenode* node = header.left;
-        basenode* ans = nullptr;
-        while (node != nullptr) {
-            if (static_cast<bstnode*>(node)->key >= key) {
-                ans = node;
-                node = node->left;
-            }
-            else {
-                node = node->right;
-            }
-        }
-        if (ans == nullptr) {
-            return iterator(nullptr);
-        }
-        return iterator(ans);
-    }
-
-    std::pair<iterator, bool> insert(const T& key) {
-        if (header.left == nullptr) {
-            header.left = new bstnode(key, &header);
-            ++_size;
-            return std::make_pair(iterator(header.left), true);
-        }
-
-        basenode* parent = &header;
-        basenode* node = header.left;
-        while (node != nullptr) {
-            if (key < static_cast<bstnode*>(node)->key) {
-                parent = node;
-                node = node->left;
-            }
-            else if (static_cast<bstnode*>(node)->key < key) {
-                parent = node;
-                node = node->right;
-            }
-            else {
-                // Вставка дубликата не разрешена
-                return std::make_pair(iterator(nullptr), false);
-            }
-        }
-
-        bstnode* new_node = new bstnode(key, parent);
-        if (key < static_cast<bstnode*>(parent)->key) {
-            parent->left = new_node;
-        }
-        else {
-            parent->right = new_node;
-        }
-
-        ++_size;
-
-        // Расчет и обновление высоты для всех предков нового узла
-        basenode* cur_node = new_node->parent;
-        while (cur_node != &header) {
-            int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-            int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-            cur_node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-            cur_node = cur_node->parent;
-        }
-
-        // Проверка и восстановление баланса
-        cur_node = new_node->parent;
-        while (cur_node != &header) {
-            int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-            int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-            if (std::abs(left_height - right_height) > 1) {
-                // Необходимо выполнить вращение
-                if (right_height > left_height) {
-                    if (key < static_cast<bstnode*>(cur_node->right)->key) {
-                        // Двойное вращение вправо-влево
-                        rotate_right(cur_node->right);
-                    }
-                    rotate_left(cur_node);
-                }
-                else {
-                    if (static_cast<bstnode*>(cur_node->left)->key < key) {
-                        // Двойное вращение влево-вправо
-                        rotate_left(cur_node->left);
-                    }
-                    rotate_right(cur_node);
-                }
-                break;
-            }
-            cur_node = cur_node->parent;
-        }
-        balancing_after_insert(cur_node);
-        return std::make_pair(iterator(new_node), true);
-    }
-
-
-    void erase(const T& key) {
-        basenode* node = header.left;
-        while (node != nullptr) {
-            if (key < static_cast<bstnode*>(node)->key) {
-                node = node->left;
-            }
-            else if (static_cast<bstnode*>(node)->key < key) {
-                node = node->right;
-            }
-            else {
-                // Найден узел для удаления
-                basenode* parent = node->parent;
-                basenode* left_child = node->left;
-                basenode* right_child = node->right;
-                delete node;
-
-                // Обновление указателя на узел родителя
-                if (parent->left == node) {
-                    parent->left = (left_child != nullptr) ? left_child : right_child;
-                }
-                else {
-                    parent->right = (left_child != nullptr) ? left_child : right_child;
-                }
-
-                // Обновление указателя родителя для потомков узла
-                if (left_child != nullptr) {
-                    left_child->parent = parent;
-                }
-                if (right_child != nullptr) {
-                    right_child->parent = parent;
-                }
-
-                --_size;
-
-                // Расчет и обновление высоты для всех предков удаленного узла
-                basenode* cur_node = parent;
-                while (cur_node != &header) {
-                    int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-                    int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-                    cur_node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-                    cur_node = cur_node->parent;
-                }
-
-                // Проверка и восстановление баланса
-                cur_node = parent;
-                while (cur_node != &header) {
-                    int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-                    int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-                    if (std::abs(left_height - right_height) > 1) {
-                        // Необходимо выполнить вращение
-                        if (right_height > left_height) {
-                            int right_left_height = (cur_node->right->left != nullptr) ? static_cast<bstnode*>(cur_node->right->left)->height : 0;
-                            int right_right_height = (cur_node->right->right != nullptr) ? static_cast<bstnode*>(cur_node->right->right)->height : 0;
-                            if (right_left_height > right_right_height) {
-                                // Двойное вращение вправо-влево
-                                rotate_right(cur_node->right);
-                            }
-                            rotate_left(cur_node);
-                        }
-                        else {
-                            int left_left_height = (cur_node->left->left != nullptr) ? static_cast<bstnode*>(cur_node->left->left)->height : 0;
-                            int left_right_height = (cur_node->left->right != nullptr) ? static_cast<bstnode*>(cur_node->left->right)->height : 0;
-                            if (left_right_height > left_left_height) {
-                                // Двойное вращение влево-вправо
-                                rotate_left(cur_node->left);
-                            }
-                            rotate_right(cur_node);
-                        }
-                        cur_node = cur_node->parent;  // Узел стал предком после вращения
-                    }
-                    else {
-                        cur_node = cur_node->parent;
-                    }
-                }
-                balancing_after_erase(cur_node);
-                break;
-            }
-        }
-    }
-
-    iterator begin() const {
-        basenode* node = header.left;
-        while (node->left != nullptr) {
-            node = node->left;
-        }
-        return iterator(node);
-    }
-
-    iterator end() const {
-        return iterator(nullptr);
-    }
-};
-
-template <typename T>
-typename avl_tree<T>::basenode* avl_tree<T>::next(typename avl_tree<T>::basenode* node) {
-    if (node->right != nullptr) {
-        node = node->right;
-        while (node->left != nullptr) {
-            node = node->left;
-        }
-        return node;
-    }
-
-    while (node->parent != nullptr && node->parent->right == node) {
-        node = node->parent;
-    }
-
-    return node->parent;
-}
-
-template <typename T>
-typename avl_tree<T>::basenode* avl_tree<T>::prev(typename avl_tree<T>::basenode* node) {
-    if (node == nullptr) {
-        return nullptr;
-    }
-
-    if (node->left != nullptr) {
-        node = node->left;
-        while (node->right != nullptr) {
-            node = node->right;
-        }
-        return node;
-    }
-
-    while (node->parent != nullptr && node->parent->left == node) {
-        node = node->parent;
-    }
-
-    return node->parent;
-}
-
-template <typename T>
-void avl_tree<T>::balancing_after_insert(basenode* node) {
-    basenode* cur_node = node;
-    while (cur_node != &header) {
-        int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-        int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-        int cur_height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-
-        int balance_factor = right_height - left_height;
-
-        if (balance_factor > 1) {
-            // Необходимо выполнить вращение влево
-            int right_left_height = (cur_node->right->left != nullptr) ? static_cast<bstnode*>(cur_node->right->left)->height : 0;
-            int right_right_height = (cur_node->right->right != nullptr) ? static_cast<bstnode*>(cur_node->right->right)->height : 0;
-            if (right_left_height > right_right_height) {
-                // Двойное вращение вправо-влево
-                rotate_right(cur_node->right);
-            }
-            rotate_left(cur_node);
-        }
-        else if (balance_factor < -1) {
-            // Необходимо выполнить вращение вправо
-            int left_left_height = (cur_node->left->left != nullptr) ? static_cast<bstnode*>(cur_node->left->left)->height : 0;
-            int left_right_height = (cur_node->left->right != nullptr) ? static_cast<bstnode*>(cur_node->left->right)->height : 0;
-            if (left_right_height > left_left_height) {
-                // Двойное вращение влево-вправо
-                rotate_left(cur_node->left);
-            }
-            rotate_right(cur_node);
-        }
-
-        cur_node->height = cur_height;
-        cur_node = cur_node->parent;
-    }
-}
-
-template <typename T>
-void avl_tree<T>::balancing_after_erase(basenode* node) {
-    balancing_after_insert(node);
-}
-
-template <typename T>
-void avl_tree<T>::rec_clear(avl_tree<T>::basenode* node) {
-    if (node->left != nullptr) {
-        rec_clear(node->left);
-    }
-    if (node->right != nullptr) {
-        rec_clear(node->right);
-    }
-    delete node;
-}
-
-
-
-
-#endif  // SRTTREE_H
-
-
-using namespace std;
-template <typename T>
-void print(T& seq) {
-    cout << "size=" << seq.size() << endl;
-    for (auto& x : seq) cout << x << ' ';
-    cout << endl;
-    auto it = seq.begin();
-    for (auto it = seq.end(); it != seq.begin();) {
-        --it;
-        cout << *it << ' ';
-    }
-    cout << endl;
-}
-
-using namespace std;
-
-int main() {
-    cout << "******************" << endl;
-    cout << "*     task 7     *" << endl;
-    cout << "******************" << endl;
-    // Проверка задания 7.
-    avl_tree<int> s1 = { 8,4,12,2,6,10,14,1,3,5,7,9,11,13,15,0,16 };
-    s1.rotate_left(s1.find(8));
-    s1.print();
-    /* Правильный ответ
-    size=17
-                            0 0x2632520 0x1001be0
-                       1 0x1001be0 0x1001b20
-                  2 0x1001b20 0x1001ac0
-                       3 0x1001c10 0x1001b20
-             4 0x1001ac0 0x1001750
-                       5 0x1001c40 0x1001b50
-                  6 0x1001b50 0x1001ac0
-                       7 0x1001c70 0x1001b50
-        8 0x1001750 0x1001af0
-                  9 0x1001ca0 0x1001b80
-            10 0x1001b80 0x1001750
-                 11 0x2632490 0x1001b80
-    12 0x1001af0 0x62fd88
-            13 0x26324c0 0x1001bb0
-       14 0x1001bb0 0x1001af0
-            15 0x26324f0 0x1001bb0
-                 16 0x26325d0 0x26324f0
-    */
-    s1.rotate_left(s1.find(15));
-    s1.print();
-    print(s1);
-    /* Правильный ответ
-    size=17
-                            0 0x642520 0xf71be0
-                       1 0xf71be0 0xf71b20
-                  2 0xf71b20 0xf71ac0
-                       3 0xf71c10 0xf71b20
-             4 0xf71ac0 0xf71750
-                       5 0xf71c40 0xf71b50
-                  6 0xf71b50 0xf71ac0
-                       7 0xf71c70 0xf71b50
-        8 0xf71750 0xf71af0
-                  9 0xf71ca0 0xf71b80
-            10 0xf71b80 0xf71750
-                 11 0x642490 0xf71b80
-    12 0xf71af0 0x62fd88
-            13 0x6424c0 0xf71bb0
-       14 0xf71bb0 0xf71af0
-                 15 0x6424f0 0x6427e0
-            16 0x6427e0 0xf71bb0
-    size=17
-    0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
-    16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
-    */
-    s1.rotate_right(s1.find(12));
-    s1.rotate_right(s1.find(16));
-    s1.print();
-    print(s1);
-    /* Правильный ответ
-    size=17
-                       0 (1) 0x2552520 0xd91be0
-                  1 (2) 0xd91be0 0xd91b20
-             2 (3) 0xd91b20 0xd91ac0
-                  3 (1) 0xd91c10 0xd91b20
-        4 (4) 0xd91ac0 0xd91750
-                  5 (1) 0xd91c40 0xd91b50
-             6 (2) 0xd91b50 0xd91ac0
-                  7 (1) 0xd91c70 0xd91b50
-    8 (5) 0xd91750 0x62fd78
-                  9 (1) 0xd91ca0 0xd91b80
-            10 (2) 0xd91b80 0xd91af0
-                 11 (1) 0x2552490 0xd91b80
-       12 (4) 0xd91af0 0xd91750
-                 13 (1) 0x25524c0 0xd91bb0
-            14 (3) 0xd91bb0 0xd91af0
-                 15 (2) 0x25524f0 0xd91bb0
-                      16 (1) 0x2552660 0x25524f0
-    size=17
-    0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
-    16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
-    */
-
-    cout << "******************" << endl;
-    cout << "*     task 8     *" << endl;
-    cout << "******************" << endl;
-    // Проверка задания 8
-    avl_tree<int> s2 = { 20,19,9,8,7 };
-    s2.print();
-    /* Правильный ответ
-    size=5
-                       7 (1) 0x642810 0x6426c0
-                  8 (2) 0x6426c0 0x642750
-             9 (3) 0x642750 0x6427e0
-       19 (4) 0x6427e0 0x642840
-    20 (5) 0x642840 0x62fd08
-    */
-    for (int i = 10; i < 19; i++)
-        s2.insert(i);
-    s2.print();
-    /* Правильный ответ
-    size=14
-                       7 (1) 0x642810 0x6426c0
-                  8 (2) 0x6426c0 0x642750
-             9 (10) 0x642750 0x6427e0
-                 10 (9) 0x6427b0 0x642750
-                      11 (8) 0x642660 0x6427b0
-                           12 (7) 0x642870 0x642660
-                                13 (6) 0x6425a0 0x642870
-                                     14 (5) 0x6425d0 0x6425a0
-                                          15 (4) 0x6428a0 0x6425d0
-                                               16 (3) 0x642600 0x6428a0
-                                                    17 (2) 0x642690 0x642600
-                                                         18 (1) 0x6426f0 0x642690
-       19 (11) 0x6427e0 0x642840
-    20 (12) 0x642840 0x62fd08
-    */
-    s2.erase(s2.find(18));
-    s2.print();
-    /* Правильный ответ
-    size=13
-                       7 (1) 0xee2720 0xee2870
-                  8 (2) 0xee2870 0xee2780
-             9 (9) 0xee2780 0xee25a0
-                 10 (8) 0xee28d0 0xee2780
-                      11 (7) 0xee2900 0xee28d0
-                           12 (6) 0xee2750 0xee2900
-                                13 (5) 0xee28a0 0xee2750
-                                     14 (4) 0xee27b0 0xee28a0
-                                          15 (3) 0xee2810 0xee27b0
-                                               16 (2) 0xee2600 0xee2810
-                                                    17 (1) 0xee27e0 0xee2600
-       19 (10) 0xee25a0 0xee2690
-    20 (11) 0xee2690 0x62fcf8
-    */
-    s2.erase(s2.find(14));
-    s2.print();
-    /* Правильный ответ
-    size=12
-                       7 (1) 0x26428d0 0x26427b0
-                  8 (2) 0x26427b0 0x26425d0
-             9 (8) 0x26425d0 0x2642810
-                 10 (7) 0x2642630 0x26425d0
-                      11 (6) 0x2642690 0x2642630
-                           12 (5) 0x26427e0 0x2642690
-                                13 (4) 0x2642840 0x26427e0
-                                     15 (3) 0x26425a0 0x2642840
-                                          16 (2) 0x26426c0 0x26425a0
-                                               17 (1) 0x2642870 0x26426c0
-       19 (9) 0x2642810 0x2642660
-    20 (10) 0x2642660 0x62fcf8
-    */
-    s2.erase(s2.find(19));
-    s2.print();
-    /* Правильный ответ
-    size=11
-                  7 (1) 0x25026c0 0x2502750
-             8 (2) 0x2502750 0x25027b0
-        9 (8) 0x25027b0 0x25028d0
-            10 (7) 0x2502900 0x25027b0
-                 11 (6) 0x2502660 0x2502900
-                      12 (5) 0x2502720 0x2502660
-                           13 (4) 0x25025d0 0x2502720
-                                15 (3) 0x25026f0 0x25025d0
-                                     16 (2) 0x2502870 0x25026f0
-                                          17 (1) 0x25027e0 0x2502870
-    20 (9) 0x25028d0 0x62fcf8
-    */
-
-    s2.erase(s2.find(10));
-    s2.erase(s2.find(11));
-    s2.erase(s2.find(12));
-    s2.erase(s2.find(15));
-    s2.erase(s2.find(16));
-    s2.erase(s2.find(17));
-    s2.insert(12);
-    s2.insert(10);
-    s2.insert(11);
-    s2.print();
-    /*  Правильный ответ
-    size=8
-                  7 (1) 0x2682750 0x26825d0
-             8 (2) 0x26825d0 0x2682690
-        9 (5) 0x2682690 0x26827e0
-                      10 (2) 0x2682870 0x26828d0
-                           11 (1) 0x26826c0 0x2682870
-                 12 (3) 0x26828d0 0x2682660
-            13 (4) 0x2682660 0x2682690
-    20 (6) 0x26827e0 0x62fca8
-    */
-    s2.erase(s2.find(9));
-    s2.print();
-    /*  Правильный ответ
-    size=7
-                  7 (1) 0x25927e0 0x25925d0
-             8 (2) 0x25925d0 0x2592720
-       10 (4) 0x2592720 0x2592660
-                      11 (1) 0x25926c0 0x2592600
-                 12 (2) 0x2592600 0x2592780
-            13 (3) 0x2592780 0x2592720
-    20 (5) 0x2592660 0x62fc98
-    */
-    cout << "******************" << endl;
-    cout << "*     task 9     *" << endl;
-    cout << "******************" << endl;
-
-    avl_tree<int> s3;
-    for (int i = 1; i <= 20; i++)
-        s3.insert(i);
-    s3.print();
-    print(s3);
-    /*  Правильный ответ
-    size=20
-                  1 (1) 0x642690 0x6427e0
-             2 (2) 0x6427e0 0x642a20
-                  3 (1) 0x6425d0 0x6427e0
-        4 (3) 0x642a20 0x6426c0
-                  5 (1) 0x642b40 0x642870
-             6 (2) 0x642870 0x642a20
-                  7 (1) 0x642840 0x642870
-    8 (5) 0x6426c0 0x62fc78
-                       9 (1) 0x642c00 0x642570
-                 10 (2) 0x642570 0x642900
-                      11 (1) 0x642810 0x642570
-            12 (3) 0x642900 0x642b10
-                      13 (1) 0x6426f0 0x642750
-                 14 (2) 0x642750 0x642900
-                      15 (1) 0x642990 0x642750
-       16 (4) 0x642b10 0x6426c0
-                 17 (1) 0x642a50 0x642bd0
-            18 (3) 0x642bd0 0x642b10
-                 19 (2) 0x6428d0 0x642bd0
-                      20 (1) 0x6429c0 0x6428d0
-    size=20
-    1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-    20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
-    */
-    avl_tree<int> s4;
-    for (int i = 20; i >= 1; --i)
-        s4.insert(i);
-    s4.print();
-    print(s4);
-    /*  Правильный ответ
-    size=20
-                       1 (1) 0x642930 0x6425d0
-                  2 (2) 0x6425d0 0x6427e0
-             3 (3) 0x6427e0 0x642ab0
-                  4 (1) 0x642ae0 0x6427e0
-        5 (4) 0x642ab0 0x642540
-                       6 (1) 0x642960 0x642630
-                  7 (2) 0x642630 0x6427b0
-                       8 (1) 0x642780 0x642630
-             9 (3) 0x6427b0 0x642ab0
-                      10 (1) 0x642a20 0x642a80
-                 11 (2) 0x642a80 0x6427b0
-                      12 (1) 0x642a50 0x642a80
-    13 (5) 0x642540 0x62fc68
-                 14 (1) 0x642840 0x642b10
-            15 (2) 0x642b10 0x642bd0
-                 16 (1) 0x6426c0 0x642b10
-       17 (3) 0x642bd0 0x642540
-                 18 (1) 0x642690 0x642600
-            19 (2) 0x642600 0x642bd0
-                 20 (1) 0x642660 0x642600
-    size=20
-    1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-    20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
-    */
-
-    avl_tree<int> s5;
-    for (int i = 1, j = 20; i < j; i++, j--) {
-        s5.insert(i);
-        s5.insert(j);
-    }
-    s5.print();
-    print(s5);
-    /*  Правильный ответ
-    size=20
-                       1 (1) 0x24b27e0 0x24b2810
-                  2 (2) 0x24b2810 0x24b29c0
-             3 (3) 0x24b29c0 0x24b2ab0
-                  4 (1) 0x24b2c00 0x24b29c0
-        5 (4) 0x24b2ab0 0x24b2990
-                  6 (1) 0x24b2690 0x24b2540
-             7 (2) 0x24b2540 0x24b2ab0
-                  8 (1) 0x24b2960 0x24b2540
-    9 (5) 0x24b2990 0x62fc48
-                 10 (2) 0x24b2ae0 0x24b2b40
-                      11 (1) 0x24b2600 0x24b2ae0
-            12 (3) 0x24b2b40 0x24b2840
-                 13 (1) 0x24b2870 0x24b2b40
-       14 (4) 0x24b2840 0x24b2990
-                 15 (2) 0x24b26c0 0x24b2930
-                      16 (1) 0x24b2660 0x24b26c0
-            17 (3) 0x24b2930 0x24b2840
-                      18 (1) 0x24b2bd0 0x24b2630
-                 19 (2) 0x24b2630 0x24b2930
-                      20 (1) 0x24b2780 0x24b2630
-    size=20
-    1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-    20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
-    */
-    for (int i = 1; i <= 10; i++)
-        s3.erase(s3.find(i));
-    s3.print();
-    print(s3);
-    /*  Правильный ответ
-    size=10
-            11 (1) 0x2642ba0 0x26429f0
-       12 (3) 0x26429f0 0x2642a50
-                 13 (1) 0x2642c00 0x2642a80
-            14 (2) 0x2642a80 0x26429f0
-                 15 (1) 0x2642a20 0x2642a80
-    16 (4) 0x2642a50 0x62fc48
-            17 (1) 0x2642ab0 0x26425d0
-       18 (3) 0x26425d0 0x2642a50
-            19 (2) 0x2642510 0x26425d0
-                 20 (1) 0x26424e0 0x2642510
-    size=10
-    11 12 13 14 15 16 17 18 19 20
-    20 19 18 17 16 15 14 13 12 11
-    */
-    for (int i = 1; i <= 10; i++)
-        s4.erase(s4.find(i));
-    s4.print();
-    print(s4);
-    /*  Правильный ответ
-    size=10
-       11 (2) 0x642b10 0x642510
-            12 (1) 0x6427e0 0x642b10
-    13 (4) 0x642510 0x62fc28
-                 14 (1) 0x642840 0x642c30
-            15 (2) 0x642c30 0x642930
-                 16 (1) 0x642ae0 0x642c30
-       17 (3) 0x642930 0x642510
-                 18 (1) 0x6427b0 0x642780
-            19 (2) 0x642780 0x642930
-                 20 (1) 0x642c00 0x642780
-    size=10
-    11 12 13 14 15 16 17 18 19 20
-    20 19 18 17 16 15 14 13 12 11
-    */
-    for (int i = 1; i <= 10; i++)
-        s5.erase(s5.find(i));
-    s5.print();
-    print(s5);
-    /*  Правильный ответ
-    size=10
-            11 (1) 0xe23110 0xe22de0
-       12 (2) 0xe22de0 0xe23020
-            13 (1) 0xe22d50 0xe22de0
-    14 (4) 0xe23020 0x62fc08
-            15 (2) 0xe23050 0xe233e0
-                 16 (1) 0xe231d0 0xe23050
-       17 (3) 0xe233e0 0xe23020
-                 18 (1) 0xe230e0 0xe22cf0
-            19 (2) 0xe22cf0 0xe233e0
-                 20 (1) 0xe22e70 0xe22cf0
-    size=10
-    11 12 13 14 15 16 17 18 19 20
-    20 19 18 17 16 15 14 13 12 11
-    */
-    return 0;
-}
-```
-
-# TESTs
-
-```c
-               16(0)
-              /     \
-           8(1)     24(1)
-          /   \     /    \
-       4(2)  12(2) 20(17) 28(17)
-      /   \   \     \     /    \
-   2(3)  6(3) 10(10) 22(18) 26(25)
-  /     /     \      /      /     \
-1(4)  3(4)   9(11)  18(18)  25(26) 30(25)
-         \     \     /       / \      \
-        5(7)  7(7) 14(10) 21(22) 27(26) 31(29)
-                /     \     /        \
-              13(14) 15(14) 23(22)     32(31)
-
-```
-
-# Кое-как не работающая программа
-```cpp
-#include <iostream>
-#include <map>
-
-#include <iostream>
-
-#ifndef SRTTREE_H
-#define SRTTREE_H
-
-#include <utility>
-#include <iostream>
-#include <initializer_list>
-#include <map>
-
-template <typename T>
-class avl_tree {
-    struct basenode {
-        basenode* left;
-        basenode* right;
-        basenode* parent;
-        char height;
-        basenode(basenode* p) : left(nullptr), right(nullptr), parent(p), height(1) {}
-    };
-
-    struct bstnode : basenode {
-        T key;
-        int height;
-        bstnode(T k, basenode* p) : basenode(p), key(k), height(1) {}
-    };
-
-    // Методы для поиска следующего и предыдущего узла для итератора
-    static basenode* next(basenode* node);
-    static basenode* prev(basenode* node);
-    void balancing_after_insert(basenode* node);
-    void balancing_after_erase(basenode* node);
-
-    // Итератор
-
-    class iterator {
-    private:
-        basenode* node;
-
-    public:
-        friend class avl_tree<T>;
-
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using reference = T&;
-        using pointer = T*;
-        using iterator_category = std::bidirectional_iterator_tag;
-
-        iterator() : node(nullptr) {}
-        iterator(basenode* nd) : node(nd) {}
-
-
-        reference operator*() {
-            return static_cast<bstnode*>(node)->key;
-        }
-
-        operator basenode* () const {
-            return node;
-        }
-
-        iterator& operator++() {
-            node = next(node);
-            return *this;
-        }
-
-        iterator operator++(int) {
-            iterator temp = *this;
-            ++(*this);
-            return temp;
-        }
-
-        iterator& operator--() {
-            node = prev(node);
-            return *this;
-        }
-
-        iterator operator--(int) {
-            iterator temp = *this;
-            --(*this);
-            return temp;
-        }
-
-
-
-        bool operator==(const iterator& other) const {
-            return node == other.node;
-        }
-
-        bool operator!=(const iterator& other) const {
-            return !(*this == other);
-        }
-
-        operator const T& () const {
-            return static_cast<bstnode*>(node)->key;
-        }
-    };
-
-private:
-    int _size;
-    basenode header;
-    void rec_clear(basenode*);
-    void dfs(int dep, basenode* node) {
+    void dfs_dump(int& num, basenode* node, std::map<basenode*, int>& mn)
+    {
         if (node == nullptr)
             return;
-        dfs(dep + 1, node->left);
-        std::cout.width(dep * 5);
-        std::cout << *iterator(node) << ' ' << (node) << ' ' << node->parent << ' ' << int(char_height(node)) << std::endl;
-        dfs(dep + 1, node->right);
-    };
-public:
-    static int char_height(basenode* node) {
-        if (node == nullptr) {
-            return 0; // Пустое поддерево имеет высоту 0
-        }
-        else {
-            return node->height; // Возвращаем значение поля height объекта node
-        }
-    }
-    void rotate_left(avl_tree<T>::basenode* node) {
-        basenode* right_child = node->right;
-        node->right = right_child->left;
-        if (right_child->left != nullptr) {
-            right_child->left->parent = node;
-        }
-        right_child->parent = node->parent;
-        if (node->parent->left == node) {
-            node->parent->left = right_child;
-        }
-        else {
-            node->parent->right = right_child;
-        }
-        right_child->left = node;
-        node->parent = right_child;
-
-        // Обновление высоты узлов
-        int left_height = (node->left != nullptr) ? static_cast<bstnode*>(node->left)->height : 0;
-        int right_height = (node->right != nullptr) ? static_cast<bstnode*>(node->right)->height : 0;
-        node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-
-        left_height = (right_child->left != nullptr) ? static_cast<bstnode*>(right_child->left)->height : 0;
-        right_height = (right_child->right != nullptr) ? static_cast<bstnode*>(right_child->right)->height : 0;
-        right_child->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-    }
-    void rotate_right(avl_tree<T>::basenode* node) {
-        basenode* left_child = node->left;
-        node->left = left_child->right;
-        if (left_child->right != nullptr) {
-            left_child->right->parent = node;
-        }
-        left_child->parent = node->parent;
-        if (node->parent->left == node) {
-            node->parent->left = left_child;
-        }
-        else {
-            node->parent->right = left_child;
-        }
-        left_child->right = node;
-        node->parent = left_child;
-
-        // Обновление высоты узлов
-        int left_height = (node->left != nullptr) ? static_cast<bstnode*>(node->left)->height : 0;
-        int right_height = (node->right != nullptr) ? static_cast<bstnode*>(node->right)->height : 0;
-        node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-
-        left_height = (left_child->left != nullptr) ? static_cast<bstnode*>(left_child->left)->height : 0;
-        right_height = (left_child->right != nullptr) ? static_cast<bstnode*>(left_child->right)->height : 0;
-        left_child->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-    }
-    avl_tree() : header(nullptr), _size(0) {}
-    avl_tree(const std::initializer_list<T>& lst) : header(nullptr), _size(0) {
-        // Вписать построение дерева по списку инициализации
-        for (const T& value : lst) {
-            insert(value);
-        }
-    }
-
-    ~avl_tree() {
-        clear();
-    }
-
-    int size() {
-        return _size;
-    }
-
-    void print() {
-        std::cout << "size=" << _size << std::endl;
-        dfs(0, header.left);
-    }
-    /**/
-    void dump() {
-        std::map<basenode*,int> mn;
-        int num=1;
-        dfs_dump(num,header.left,mn);
-    }
-    void dfs_dump(int &num,basenode *node,std::map<basenode*,int> &mn) {
-        if (node==nullptr)
-            return;
-        auto fnd=mn.find(node->parent);
-        std::cout << static_cast<bstnode*>(node)->key<<' ';
-        if (fnd==mn.end())
+        auto fnd = mn.find(node->parent);
+        std::cout << static_cast<avlnode*>(node)->key << ' ';
+        if (fnd == mn.end())
             std::cout << 0 << std::endl;
         else
             std::cout << fnd->second << std::endl;
-        mn[node]=num++;
-        dfs_dump(num,node->left,mn);
-        dfs_dump(num,node->right,mn);
+        mn[node] = num++;
+        dfs_dump(num, node->left, mn);
+        dfs_dump(num, node->right, mn);
     }
-
-    void clear() {
-        if (header.left != nullptr) {
-            rec_clear(header.left);
-            header.left = nullptr;
-        }
-        _size = 0;
-    }
-
-    iterator find(const T& key) const {
+    std::pair<iterator, bool> insert(T key);
+    iterator find(const T& key);
+    iterator begin()
+    {
+        if (_size == 0)
+            return end();
         basenode* node = header.left;
-        while (node != nullptr) {
-            if (key < static_cast<bstnode*>(node)->key) {
-                node = node->left;
-            }
-            else if (static_cast<bstnode*>(node)->key < key) {
-                node = node->right;
-            }
-            else {
-                return iterator(node);
-            }
-        }
-        return iterator(nullptr);
-    }
-    
-    std::pair<iterator, bool> insert(const T& key) {
-        if (header.left == nullptr) {
-            header.left = new bstnode(key, &header);
-            ++_size;
-            return std::make_pair(iterator(header.left), true);
-        }
-
-        basenode* parent = &header;
-        basenode* node = header.left;
-        while (node != nullptr) {
-            if (key < static_cast<bstnode*>(node)->key) {
-                parent = node;
-                node = node->left;
-            }
-            else if (static_cast<bstnode*>(node)->key < key) {
-                parent = node;
-                node = node->right;
-            }
-            else {
-                // Вставка дубликата не разрешена
-                return std::make_pair(iterator(nullptr), false);
-            }
-        }
-
-        bstnode* new_node = new bstnode(key, parent);
-
-        if (key < static_cast<bstnode*>(parent)->key) {
-            parent->left = new_node;
-        }
-        else {
-            parent->right = new_node;
-        }
-
-        ++_size;
-
-        // Расчет и обновление высоты для всех предков нового узла
-        basenode* cur_node = new_node->parent;
-        while (cur_node != &header) {
-            int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-            int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-            cur_node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-            cur_node = cur_node->parent;
-        }
-
-        // Проверка и восстановление баланса
-        cur_node = new_node->parent;
-        while (cur_node != &header) {
-            int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-            int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-            if (std::abs(left_height - right_height) > 1) {
-                // Необходимо выполнить вращение
-                if (right_height > left_height) {
-                    if (key < static_cast<bstnode*>(cur_node->right)->key) {
-                        // Двойное вращение вправо-влево
-                        rotate_right(cur_node->right);
-                    }
-                    rotate_left(cur_node);
-                }
-                else {
-                    if (static_cast<bstnode*>(cur_node->left)->key < key) {
-                        // Двойное вращение влево-вправо
-                        rotate_left(cur_node->left);
-                    }
-                    rotate_right(cur_node);
-                }
-                break;
-            }
-            cur_node = cur_node->parent;
-        }
-        balancing_after_insert(cur_node);
-        return std::make_pair(iterator(new_node), true);
-    }
-
-
-    void erase(const T& key) {
-        basenode* node = header.left;
-        while (node != nullptr) {
-            if (key < static_cast<bstnode*>(node)->key) {
-                node = node->left;
-            }
-            else if (static_cast<bstnode*>(node)->key < key) {
-                node = node->right;
-            }
-            else {
-                // Найден узел для удаления
-                basenode* parent = node->parent;
-                basenode* left_child = node->left;
-                basenode* right_child = node->right;
-                delete node;
-
-                // Обновление указателя на узел родителя
-                if (parent->left == node) {
-                    parent->left = (left_child != nullptr) ? left_child : right_child;
-                }
-                else {
-                    parent->right = (left_child != nullptr) ? left_child : right_child;
-                }
-
-                // Обновление указателя родителя для потомков узла
-                if (left_child != nullptr) {
-                    left_child->parent = parent;
-                }
-                if (right_child != nullptr) {
-                    right_child->parent = parent;
-                }
-
-                --_size;
-
-                // Расчет и обновление высоты для всех предков удаленного узла
-                basenode* cur_node = parent;
-                while (cur_node != &header) {
-                    int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-                    int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-                    cur_node->height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-                    cur_node = cur_node->parent;
-                }
-
-                // Проверка и восстановление баланса
-                cur_node = parent;
-                while (cur_node != &header) {
-                    int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-                    int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-                    if (std::abs(left_height - right_height) > 1) {
-                        // Необходимо выполнить вращение
-                        if (right_height > left_height) {
-                            int right_left_height = (cur_node->right->left != nullptr) ? static_cast<bstnode*>(cur_node->right->left)->height : 0;
-                            int right_right_height = (cur_node->right->right != nullptr) ? static_cast<bstnode*>(cur_node->right->right)->height : 0;
-                            if (right_left_height > right_right_height) {
-                                // Двойное вращение вправо-влево
-                                rotate_right(cur_node->right);
-                            }
-                            rotate_left(cur_node);
-                        }
-                        else {
-                            int left_left_height = (cur_node->left->left != nullptr) ? static_cast<bstnode*>(cur_node->left->left)->height : 0;
-                            int left_right_height = (cur_node->left->right != nullptr) ? static_cast<bstnode*>(cur_node->left->right)->height : 0;
-                            if (left_right_height > left_left_height) {
-                                // Двойное вращение влево-вправо
-                                rotate_left(cur_node->left);
-                            }
-                            rotate_right(cur_node);
-                        }
-                        cur_node = cur_node->parent;  // Узел стал предком после вращения
-                    }
-                    else {
-                        cur_node = cur_node->parent;
-                    }
-                }
-                balancing_after_erase(cur_node);
-                break;
-            }
-        }
-    }
-
-    iterator begin() const {
-        basenode* node = header.left;
-        while (node->left != nullptr) {
+        while (node->left != nullptr)
             node = node->left;
-        }
         return iterator(node);
     }
-
-    iterator end() const {
-        return iterator(nullptr);
+    iterator end()
+    {
+        return iterator(&header);
     }
+    void clear()
+    {
+        rec_clear(header.left);
+        header.left = nullptr;
+        _size = 0;
+    }
+    void erase(iterator it);
+    void rotate_right(iterator it);
+    void rotate_left(iterator it);
+    static char height(basenode* node);
+    void balancing(basenode* node);
 };
 
 template <typename T>
-typename avl_tree<T>::basenode* avl_tree<T>::next(typename avl_tree<T>::basenode* node) {
-    if (node->right != nullptr) {
+void avltree<T>::dfs(int dep, basenode* node)
+{
+    if (node == nullptr)
+        return;
+    dfs(dep + 1, node->left);
+    std::cout.width(dep * 5);
+    std::cout << *iterator(node) << " (" << static_cast<int>(height(node))
+        << ")" << ' ' << node << ' ' << node->parent << std::endl;
+    dfs(dep + 1, node->right);
+}
+
+template <typename T>
+std::pair<typename avltree<T>::iterator, bool> avltree<T>::insert(T key)
+{
+    if (_size == 0)
+    {
+        avlnode* node = new avlnode(key, &header);
+        header.left = node;
+        ++_size;
+        return { node, true };
+    }
+    else
+    {
+        basenode* node = header.left;
+        bool insert_left;
+        while (true)
+        {
+            if (key < (static_cast<avlnode*>(node))->key)
+            {
+                insert_left = true;
+                if (node->left == nullptr)
+                    break;
+                else
+                    node = node->left;
+            }
+            else if (key > (static_cast<avlnode*>(node))->key)
+            {
+                insert_left = false;
+                if (node->right == nullptr)
+                    break;
+                else
+                    node = node->right;
+            }
+            else
+                return { node, false };
+        }
+        ++_size;
+        node = (insert_left ? node->left : node->right) = new avlnode(key, node);
+        balancing(node->parent);
+        return { node, true };
+    }
+}
+
+template <typename T>
+typename avltree<T>::iterator avltree<T>::find(const T& key)
+{
+    basenode* node = header.left;
+    while (node != nullptr)
+    {
+        if (key < (static_cast<avlnode*>(node))->key)
+            node = node->left; //
+        else if (key > (static_cast<avlnode*>(node))->key)
+            node = node->right; //
+        else
+            return iterator(node);
+    }
+    return end();
+}
+
+template <typename T>
+void avltree<T>::rec_clear(basenode* node)
+{
+    if (node != nullptr)
+    {
+        if (node->left != nullptr)
+            rec_clear(node->left);
+        if (node->right != nullptr)
+            rec_clear(node->right);
+        delete node;
+    }
+}
+
+template <typename T>
+typename avltree<T>::basenode* avltree<T>::next(basenode* node)
+{
+    if (node->right != nullptr)
+    {
         node = node->right;
-        while (node->left != nullptr) {
+        while (node->left != nullptr)
             node = node->left;
-        }
-        return node;
     }
-
-    while (node->parent != nullptr && node->parent->right == node) {
+    else
+    {
+        basenode* pn = node;
         node = node->parent;
+        while (pn != node->left)
+        {
+            pn = node;
+            node = node->parent;
+        }
     }
-
-    return node->parent;
+    return node;
 }
 
 template <typename T>
-typename avl_tree<T>::basenode* avl_tree<T>::prev(typename avl_tree<T>::basenode* node) {
-    if (node == nullptr) {
-        return nullptr;
-    }
-
-    if (node->left != nullptr) {
+typename avltree<T>::basenode* avltree<T>::prev(basenode* node)
+{
+    if (node->left != nullptr)
+    {
         node = node->left;
-        while (node->right != nullptr) {
+        while (node->right != nullptr)
             node = node->right;
-        }
-        return node;
     }
-
-    while (node->parent != nullptr && node->parent->left == node) {
+    else
+    {
+        basenode* pn = node;
         node = node->parent;
-    }
-
-    return node->parent;
-}
-
-template <typename T>
-void avl_tree<T>::balancing_after_insert(basenode* node) {
-    basenode* cur_node = node;
-    while (cur_node != &header) {
-        int left_height = (cur_node->left != nullptr) ? static_cast<bstnode*>(cur_node->left)->height : 0;
-        int right_height = (cur_node->right != nullptr) ? static_cast<bstnode*>(cur_node->right)->height : 0;
-        int cur_height = (left_height > right_height) ? left_height + 1 : right_height + 1;
-
-        int balance_factor = right_height - left_height;
-
-        if (balance_factor > 1) {
-            // Необходимо выполнить вращение влево
-            int right_left_height = (cur_node->right->left != nullptr) ? static_cast<bstnode*>(cur_node->right->left)->height : 0;
-            int right_right_height = (cur_node->right->right != nullptr) ? static_cast<bstnode*>(cur_node->right->right)->height : 0;
-            if (right_left_height > right_right_height) {
-                // Двойное вращение вправо-влево
-                rotate_right(cur_node->right);
-            }
-            rotate_left(cur_node);
+        while (pn != node->right)
+        {
+            pn = node;
+            node = node->parent;
         }
-        else if (balance_factor < -1) {
-            // Необходимо выполнить вращение вправо
-            int left_left_height = (cur_node->left->left != nullptr) ? static_cast<bstnode*>(cur_node->left->left)->height : 0;
-            int left_right_height = (cur_node->left->right != nullptr) ? static_cast<bstnode*>(cur_node->left->right)->height : 0;
-            if (left_right_height > left_left_height) {
-                // Двойное вращение влево-вправо
-                rotate_left(cur_node->left);
-            }
-            rotate_right(cur_node);
+    }
+    return node;
+}
+
+template <typename T>
+void avltree<T>::erase(avltree<T>::iterator it)
+{
+    basenode* p = it.node->parent;
+    if (it.node->left == nullptr)
+    {
+        if (it.node->right == nullptr)
+        {
+            (p->left == it.node ? p->left : p->right) = nullptr;
         }
-
-        cur_node->height = cur_height;
-        cur_node = cur_node->parent;
+        else
+        {
+            (p->left == it.node ? p->left : p->right) = it.node->right;
+            it.node->right->parent = p;
+        }
+        balancing(p);
     }
+    else if (it.node->right == nullptr)
+    {
+        (p->left == it.node ? p->left : p->right) = it.node->left;
+        it.node->left->parent = p;
+        balancing(p);
+    }
+    else
+    {
+        basenode* rr = it.node->right;
+        if (rr->left == nullptr)
+        {
+            (it.node->parent->left == it.node ? it.node->parent->left : it.node->parent->right) = rr;
+            rr->parent = it.node->parent;
+            rr->left = it.node->left;
+            it.node->left->parent = rr;
+            balancing(rr);
+        }
+        else
+        {
+            while (rr->left != nullptr)
+                rr = rr->left;
+            rr->parent->left = rr->right;
+            if (rr->right != nullptr)
+                rr->right->parent = rr->parent;
+            rr->left = it.node->left;
+            rr->right = it.node->right;
+            it.node->left->parent = rr;
+            it.node->right->parent = rr;
+            basenode* t = rr->parent;
+            rr->parent = it.node->parent;
+            (it.node->parent->left == it.node ? it.node->parent->left : it.node->parent->right) = rr;
+            balancing(t);
+        }
+    }
+    --_size;
+    delete (it.node);
 }
 
 template <typename T>
-void avl_tree<T>::balancing_after_erase(basenode* node) {
-    balancing_after_insert(node);
+void avltree<T>::rotate_right(avltree<T>::iterator it)
+{
+    basenode* ln = it.node->left;
+    ln->parent = it.node->parent;
+    if (it.node->parent->left == it.node)
+        it.node->parent->left = ln;
+    else
+        it.node->parent->right = ln;
+    it.node->left = ln->right;
+    if (ln->right != nullptr)
+        ln->right->parent = it.node;
+    ln->right = it.node;
+    it.node->parent = ln;
+    static_cast<avlnode*>(it.node)->height = 1 + std::max(height(it.node->left), height(it.node->right));
+    static_cast<avlnode*>(ln)->height = 1 + std::max(height(ln->left), height(ln->right));
 }
 
 template <typename T>
-void avl_tree<T>::rec_clear(avl_tree<T>::basenode* node) {
-    if (node->left != nullptr) {
-        rec_clear(node->left);
-    }
-    if (node->right != nullptr) {
-        rec_clear(node->right);
-    }
-    delete node;
+void avltree<T>::rotate_left(avltree<T>::iterator it)
+{
+    basenode* rn = it.node->right;
+    rn->parent = it.node->parent;
+    if (it.node->parent->left == it.node)
+        it.node->parent->left = rn;
+    else
+        it.node->parent->right = rn;
+    it.node->right = rn->left;
+    if (rn->left != nullptr)
+        rn->left->parent = it.node;
+    rn->left = it.node;
+    it.node->parent = rn;
+    static_cast<avlnode*>(it.node)->height = 1 + std::max(height(it.node->left), height(it.node->right));
+    static_cast<avlnode*>(rn)->height = 1 + std::max(height(rn->left), height(rn->right));
 }
 
+template <typename T>
+char avltree<T>::height(basenode* node)
+{
+    if (node == nullptr)
+        return 0;
+    return static_cast<avlnode*>(node)->height;
+}
 
-
-
-#endif  // SRTTREE_H
-
+template <typename T>
+void avltree<T>::balancing(basenode* node)
+{
+    basenode* t = node;
+    while (t != &header)
+    {
+        char lheight = height(t->left);
+        char rheight = height(t->right);
+        if (lheight == rheight + 2)
+        {
+            if (height(t->left->right) > height(t->left->left))
+                rotate_left(t->left);
+            rotate_right(t);
+            t = t->parent->parent;
+        }
+        else if (lheight + 2 == rheight)
+        {
+            if (height(t->right->left) > height(t->right->right))
+                rotate_right(t->right);
+            rotate_left(t);
+            t = t->parent->parent;
+        }
+        else
+        {
+            char cheight = 1 + std::max(lheight, rheight);
+            if (cheight != height(t))
+            {
+                static_cast<avlnode*>(t)->height = cheight;
+                t = t->parent;
+            }
+            else
+                break;
+        }
+    }
+}
+#endif
 
 using namespace std;
+
 int main() {
     int n;
-    avl_tree<int> tree;
+    avltree<int> tree;
     for (cin >> n; n > 0; --n) {
         int cm, a;
         cin >> cm;
@@ -1697,7 +701,8 @@ int main() {
         }
         else if (cm == 5) {
             cout << tree.size();
-            for (auto x : tree) cout << ' ' << x;
+            for (auto x : tree)
+                cout << ' ' << x;
             cout << endl;
         }
         else if (cm == 6) {
@@ -1708,10 +713,10 @@ int main() {
         }
         else if (cm == 7) {
             tree.dump();
+            tree.print();
         }
     }
-
-} 
+}
 ```
 
 
