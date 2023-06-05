@@ -257,7 +257,7 @@ void avl_tree<T>::balancing_after_erase(basenode* node) {
 
 ---
 
-### Работающая программа 
+### AVL-Tree class auto 
 
 ```cpp
 #include <utility>
